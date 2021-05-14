@@ -1,0 +1,351 @@
+{
+    type: "ND_BLOCK",
+    children: [
+        {
+            type: "ND_VAR_DEF",
+            name: "",
+            variable_type: {
+                type: "ND_TYPE_",
+                variable_type: 1,
+                dimenssions: [],
+            },
+            var_type: [
+                {
+                    type: "ND_VAR_TYPE",
+                    name: "a",
+                    dimenssions: [],
+                },
+            ],
+            var_init_value: [
+                ,
+            ],
+            is_const: 0,
+        },
+        {
+            type: "ND_FUN_DEF",
+            name: "myFunc",
+            return_type: {
+                type: "ND_TYPE_",
+                variable_type: 1,
+                dimenssions: [],
+            },
+            parameters: [
+                {
+                    type: "ND_VAR_DEF",
+                    name: "",
+                    variable_type: {
+                        type: "ND_TYPE_",
+                        variable_type: 1,
+                        dimenssions: [],
+                    },
+                    var_type: [
+                        {
+                            type: "ND_VAR_TYPE",
+                            name: "a",
+                            dimenssions: [],
+                        },
+                    ],
+                    var_init_value: [
+                        ,
+                    ],
+                    is_const: 0,
+                },
+                {
+                    type: "ND_VAR_DEF",
+                    name: "",
+                    variable_type: {
+                        type: "ND_TYPE_",
+                        variable_type: 1,
+                        dimenssions: [],
+                    },var_type: [
+                        {type: "ND_VAR_TYPE",name: "b",dimenssions: [],
+                        },
+                    ],var_init_value: [
+                        ,
+                    ],is_const: 0,
+                },
+                {type: "ND_VAR_DEF",name: "",variable_type: {type: "ND_TYPE_",variable_type: 1,dimenssions: [],
+                    },var_type: [
+                        {type: "ND_VAR_TYPE",name: "c",dimenssions: [],
+                        },
+                    ],var_init_value: [
+                        ,
+                    ],is_const: 0,
+                },
+            ],
+            body: {
+                type: "ND_BLOCK",
+                children: [
+                    {
+                        type: "ND_STMT",
+                        stmt: {
+                            type: "ND_OPERATION",
+                            operator_type: "/* =  */",
+                            parameters: [
+                                {
+                                    type: "ND_VAR",
+                                    name: "a",
+                                },
+                                {
+                                    type: "ND_LITERAL",
+                                    value: 2,
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        type: "ND_BLOCK",
+                        children: [
+                            {
+                                type: "ND_VAR_DEF",
+                                name: "",
+                                variable_type: {
+                                    type: "ND_TYPE_",
+                                    variable_type: 1,
+                                    dimenssions: [],
+                                },
+                                var_type: [
+                                    {
+                                        type: "ND_VAR_TYPE",
+                                        name: "c",
+                                        dimenssions: [],
+                                    },
+                                ],
+                                var_init_value: [
+                                    ,
+                                ],
+                                is_const: 0,
+                            },
+                            {
+                                type: "ND_STMT",
+                                stmt: {
+                                    type: "ND_OPERATION",
+                                    operator_type: "/* =  */",
+                                    parameters: [
+                                        {
+                                            type: "ND_VAR",
+                                            name: "c",
+                                        },
+                                        {
+                                            type: "ND_LITERAL",
+                                            value: 0,
+                                        },
+                                    ],
+                                },
+                            },
+                            {
+                                type: "ND_IF_ELSE",
+                                condition: {
+                                    type: "ND_OPERATION",
+                                    operator_type: "/* != */",
+                                    parameters: [
+                                        {
+                                            type: "ND_VAR",
+                                            name: "c",
+                                        },
+                                        {
+                                            type: "ND_LITERAL",
+                                            value: 0,
+                                        },
+                                    ],
+                                },
+                                if_body: {
+                                    type: "ND_BLOCK",
+                                    children: [
+                                        {
+                                            type: "ND_RETURN",
+                                            return_value: {
+                                                type: "ND_LITERAL",
+                                                value: 0,
+                                            },
+                                        },
+                                    ],
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        type: "ND_WHILE",
+                        condition: {
+                            type: "ND_OPERATION",
+                            operator_type: "/* >  */",
+                            parameters: [
+                                {
+                                    type: "ND_VAR",
+                                    name: "b",
+                                },
+                                {
+                                    type: "ND_LITERAL",
+                                    value: 0,
+                                },
+                            ],
+                        },
+                        body: {
+                            type: "ND_BLOCK",
+                            children: [
+                                {
+                                    type: "ND_STMT",
+                                    stmt: {
+                                        type: "ND_OPERATION",
+                                        operator_type: "/* =  */",
+                                        parameters: [
+                                            {
+                                                type: "ND_VAR",
+                                                name: "b",
+                                            },
+                                            {
+                                                type: "ND_OPERATION",
+                                                operator_type: "/* -  */",
+                                                parameters: [
+                                                    {
+                                                        type: "ND_VAR",
+                                                        name: "b",
+                                                    },
+                                                    {
+                                                        type: "ND_LITERAL",
+                                                        value: 1,
+                                                    },
+                                                ],
+                                            },
+                                        ],
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        type: "ND_RETURN",
+                        return_value: {
+                            type: "ND_OPERATION",
+                            operator_type: "/* +  */",
+                            parameters: [
+                                {
+                                    type: "ND_PARENTHESIS",
+                                    node: {
+                                        type: "ND_VAR",
+                                        name: "a",
+                                    },
+                                },
+                                {
+                                    type: "ND_PARENTHESIS",
+                                    node: {
+                                        type: "ND_VAR"
+                                        ,name: "b",
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+        },
+        {
+            type: "ND_FUN_DEF",
+            name: "main",
+            return_type: {
+                type: "ND_TYPE_",
+                variable_type: 1,
+                dimenssions: [],
+            },
+            parameters: [],
+            body: {
+                type: "ND_BLOCK",
+                children: [
+                    {
+                        type: "ND_STMT",
+                        stmt: {
+                            type: "ND_OPERATION",
+                            operator_type: "/* =  */",
+                            parameters: [
+                                {
+                                    type: "ND_VAR",
+                                    name: "a",
+                                },
+                                {
+                                    type: "ND_PARENTHESIS",
+                                    node: {
+                                        type: "ND_LITERAL",
+                                        value: 3,
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        type: "ND_VAR_DEF",
+                        name: "",
+                        variable_type: {
+                            type: "ND_TYPE_",
+                            variable_type: 1,
+                            dimenssions: [],
+                        },
+                        var_type: [
+                            {
+                                type: "ND_VAR_TYPE",
+                                name: "b",
+                                dimenssions: [],
+                            },
+                        ],
+                        var_init_value: [
+                            ,
+                        ],
+                        is_const: 0,
+                    },
+                    {
+                        type: "ND_STMT",
+                        stmt: {
+                            type: "ND_OPERATION",
+                            operator_type: "/* =  */",
+                            parameters: [
+                                {
+                                    type: "ND_VAR",
+                                    name: "b",
+                                },
+                                {
+                                    type: "ND_FUN",
+                                    name: "myFunc",
+                                    parameters: [
+                                        {
+                                            type: "ND_LITERAL",
+                                            value: 1,
+                                        },
+                                        {
+                                            type: "ND_LITERAL",
+                                            value: 2,
+                                        },
+                                        {
+                                            type: "ND_LITERAL",
+                                            value: 1,
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    },
+                    {type: "ND_RETURN",
+                        return_value: {
+                            type: "ND_PARENTHESIS",
+                            node: {
+                                type: "ND_PARENTHESIS",
+                                node: {
+                                    type: "ND_OPERATION",
+                                    operator_type: "/* +  */",
+                                    parameters: [
+                                        {
+                                            type: "ND_VAR",
+                                            name: "a",
+                                        },
+                                        {
+                                            type: "ND_VAR",
+                                            name: "b",
+                                        },
+                                    ],
+                                },
+                            },
+                        },
+                    },
+                ],
+            },
+        },
+    ],
+}

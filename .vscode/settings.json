@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "*.lex": "lex",
+        "*.tcc": "cpp",
+        "cmath": "cpp",
+        "functional": "cpp",
+        "iostream": "cpp"
+    }
+}

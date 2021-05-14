@@ -1,0 +1,30 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build_dir",
+            "command": "mkdir",
+            "args": [
+                "-p",
+                "build"
+            ],
+            "type": "shell"
+        },
+        {
+            "label": "build_debug",
+            "command": "cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make -j",
+            "type": "shell",
+            "dependsOn": [
+                "build_dir"
+            ]
+        },
+        {
+            "label": "clean",
+            "command": "make",
+            "args": ["clean"],
+            "type": "shell"
+        }
+    ]
+}
