@@ -23,10 +23,12 @@ class Parser
     std::shared_ptr<BlockAST> ParseBlock();
     std::shared_ptr<BaseAST> ParseDefinition();
     std::shared_ptr<FunctionAST> ParseFunction(const std::string &type, const std::string &name);
+    std::shared_ptr<FunctionAST> ParseFunctionCall();
     std::shared_ptr<VariableAST> ParseVariable(const std::string &type, const std::string &name, bool isConst);
     std::shared_ptr<VariableAST> ParseLValue();
     std::shared_ptr<VariableAST> ParseVariable();
-    std::vector<std::shared_ptr<VariableAST>> ParseParameter();
+    std::vector<std::shared_ptr<VariableAST>> ParseDefParam();
+    std::vector<std::shared_ptr<VariableAST>> ParseCallParam();
     std::shared_ptr<BaseAST> ParseBody();
     std::shared_ptr<BaseAST> ParseDecl();
     std::shared_ptr<BaseAST> ParseSimple();
@@ -38,18 +40,19 @@ class Parser
     std::shared_ptr<StmtAST> ParseContinue();
     std::shared_ptr<StmtAST> ParseReturn();
 
-    std::shared_ptr<ExprAST> ParseExpr();
-    std::shared_ptr<ExprAST> ParseAddExpr();
-    std::shared_ptr<ExprAST> ParseCondExpr();
-    std::shared_ptr<ExprAST> ParsePrimaryExpr();
-    std::shared_ptr<ExprAST> ParseLValExpr();
-    std::shared_ptr<ExprAST> ParseNumberExpr();
-    std::shared_ptr<ExprAST> ParseUnaryExpr();
-    std::shared_ptr<ExprAST> ParseMulExpr();
-    std::shared_ptr<ExprAST> ParseRelExpr();
-    std::shared_ptr<ExprAST> ParseEqExpr();
-    std::shared_ptr<ExprAST> ParseLOrExpr();
-    std::shared_ptr<ExprAST> ParseConstExpr();
+    std::shared_ptr<BaseAST> ParseExpr();
+    std::shared_ptr<BaseAST> ParseAddExpr();
+    std::shared_ptr<BaseAST> ParseCondExpr();
+    std::shared_ptr<BaseAST> ParsePrimaryExpr();
+    std::shared_ptr<BaseAST> ParseLValExpr();
+    std::shared_ptr<BaseAST> ParseNumberExpr();
+    std::shared_ptr<BaseAST> ParseUnaryExpr();
+    std::shared_ptr<BaseAST> ParseMulExpr();
+    std::shared_ptr<BaseAST> ParseRelExpr();
+    std::shared_ptr<BaseAST> ParseEqExpr();
+    std::shared_ptr<BaseAST> ParseLOrExpr();
+    std::shared_ptr<BaseAST> ParseLAndExpr();
+    std::shared_ptr<BaseAST> ParseConstExpr();
 
 public:
     Parser(const std::string &filename);

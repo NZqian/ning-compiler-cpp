@@ -34,6 +34,13 @@ enum Stmt_type
     STMT_BLANK
 };
 
+/*
+enum Expr_type
+{
+    TYPE
+}
+*/
+
 const std::set<std::string> symbolTokens{
     "(", ")", "{", "}", "[", "]", ",", ";"};
 const std::set<std::string> operatorTokens{

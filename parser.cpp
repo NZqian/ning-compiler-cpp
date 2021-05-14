@@ -77,7 +77,9 @@ std::shared_ptr<BlockAST> Parser::ParseBlock()
         }
     }
     GetNextToken(); //eat }
-    return nullptr;
+    std::shared_ptr<BlockAST> block = std::make_shared<BlockAST>(children);
+    return block;
+    //return std::make_shared<BlockAST>(children);
 }
 
 std::shared_ptr<BaseAST> Parser::ParseDefinition()
@@ -106,7 +108,7 @@ std::shared_ptr<BaseAST> Parser::ParseDefinition()
 
 std::shared_ptr<FunctionAST> Parser::ParseFunction(const std::string &returnType, const std::string &name)
 {
-    std::vector<std::shared_ptr<VariableAST>> parameters = ParseParameter();
+    std::vector<std::shared_ptr<VariableAST>> parameters = ParseDefParam();
     if (curIdentifier == "{")
     {
         std::shared_ptr<BlockAST> body = ParseBlock();
@@ -142,22 +144,22 @@ std::shared_ptr<VariableAST> Parser::ParseVariable(const std::string &type, cons
     GetNextToken(); //eat ;
     std::shared_ptr<VariableAST> variable =
         std::make_shared<VariableAST>(type, name, isConst, dimensions);
-    std::cout<<"parsed variable "<<name<<std::endl;
+    std::cout << "parsed variable " << name << std::endl;
     return variable;
 }
 std::shared_ptr<VariableAST> Parser::ParseVariable()
 {
     bool isConst = false;
     std::string name, type;
-    if (curToken == TOK_CONTINUE)
+    if (curToken == TOK_CONST)
     {
         isConst = true;
-        GetNextToken();
+        GetNextToken(); //eat const;
     }
     type = curIdentifier;
-    GetNextToken();
+    GetNextToken(); //eat type
     name = curIdentifier;
-    GetNextToken();
+    GetNextToken(); //eat name;
     return ParseVariable(type, name, isConst);
 }
 
@@ -183,10 +185,10 @@ std::shared_ptr<BaseAST> Parser::ParseStmt()
     {
         std::shared_ptr<VariableAST> lval = ParseLValue();
         GetNextToken(); //eat =
-        std::shared_ptr<ExprAST> expr = ParseExpr();
+        std::shared_ptr<BaseAST> expr = ParseExpr();
         GetNextToken(); //eat ;
         std::vector<std::shared_ptr<BaseAST>> children{lval, expr};
-        std::cout<<"parsed assign"<<std::endl;
+        std::cout << "parsed assign" << std::endl;
         return std::make_shared<StmtAST>(STMT_ASSIGN, children);
     }
     else if (curToken == TOK_IF)
@@ -209,44 +211,90 @@ std::shared_ptr<BaseAST> Parser::ParseStmt()
     {
         return ParseReturn();
     }
-    else if(curIdentifier == "{")
+    else if (curIdentifier == "{")
     {
         return ParseBlock();
     }
-    else if(curIdentifier == ";")
+    else//[Exp];
     {
-        return std::make_shared<StmtAST>(STMT_BLANK);
+        std::shared_ptr<BaseAST> stmt = ParseExpr();
+        GetNextToken();
+        return stmt;
     }
     return nullptr;
 }
 
 std::shared_ptr<StmtAST> Parser::ParseIf()
 {
-    return nullptr;
+    GetNextToken(); //eat if
+    std::shared_ptr<BaseAST> child;
+    std::vector<std::shared_ptr<BaseAST>> children;
+    GetNextToken(); //eat (
+    std::shared_ptr<BaseAST> cond = ParseLOrExpr();
+    GetNextToken(); //eat )
+    if (!cond)
+        return nullptr;
+    children.emplace_back(cond);
+    child = ParseStmt();
+    if (!child)
+        return nullptr;
+    children.emplace_back(child);
+    if (curToken == TOK_ELSE)
+    {
+        GetNextToken(); //eat else
+        child = ParseStmt();
+        if (!child)
+            return nullptr;
+        children.emplace_back(child);
+    }
+    return std::make_shared<StmtAST>(STMT_IF, children);
 }
 
 std::shared_ptr<StmtAST> Parser::ParseWhile()
 {
-
-    return nullptr;
+    GetNextToken(); //eat while
+    std::shared_ptr<BaseAST> child;
+    std::vector<std::shared_ptr<BaseAST>> children;
+    std::shared_ptr<BaseAST> cond = ParseLOrExpr();
+    if (!cond)
+        return nullptr;
+    children.emplace_back(cond);
+    child = ParseStmt();
+    if (!child)
+        return nullptr;
+    children.emplace_back(child);
+    return std::make_shared<StmtAST>(STMT_WHILE, children);
 }
 std::shared_ptr<StmtAST> Parser::ParseBreak()
 {
-
-    return nullptr;
+    GetNextToken(); //eat break
+    GetNextToken(); //eat ;
+    std::vector<std::shared_ptr<BaseAST>> children;
+    return std::make_shared<StmtAST>(STMT_BREAK, children);
 }
 std::shared_ptr<StmtAST> Parser::ParseContinue()
 {
-
-    return nullptr;
+    GetNextToken(); //eat continue
+    GetNextToken(); //eat ;
+    std::vector<std::shared_ptr<BaseAST>> children;
+    return std::make_shared<StmtAST>(STMT_CONTINUE, children);
 }
 std::shared_ptr<StmtAST> Parser::ParseReturn()
 {
-
-    return nullptr;
+    GetNextToken(); //eat continue
+    std::vector<std::shared_ptr<BaseAST>> children;
+    if (curIdentifier != ";")
+    {
+        std::shared_ptr<BaseAST> child = ParseExpr();
+        if (!child)
+            return nullptr;
+        children.emplace_back(child);
+    }
+    GetNextToken(); //eat ;
+    return std::make_shared<StmtAST>(STMT_RETURN, children);
 }
 
-std::vector<std::shared_ptr<VariableAST>> Parser::ParseParameter()
+std::vector<std::shared_ptr<VariableAST>> Parser::ParseDefParam()
 {
     std::vector<std::shared_ptr<VariableAST>> parameters;
     std::shared_ptr<BaseAST> parameter;
@@ -262,22 +310,197 @@ std::vector<std::shared_ptr<VariableAST>> Parser::ParseParameter()
         GetNextToken(); //eat ,
     }
     GetNextToken(); //eat )
-    return std::move(parameters);
+    return parameters;
 }
 
-std::shared_ptr<ExprAST> Parser::ParseExpr()
+std::shared_ptr<BaseAST> Parser::ParseExpr()
 {
     return ParseAddExpr();
 }
 
-std::shared_ptr<ExprAST> Parser::ParseConstExpr()
+std::shared_ptr<BaseAST> Parser::ParseConstExpr()
 {
-    return ParseAddExpr();  //ident must be const;
+    return ParseAddExpr(); //ident must be const;
 }
 
-std::shared_ptr<ExprAST> Parser::ParseAddExpr()
+std::shared_ptr<BaseAST> Parser::ParseAddExpr()
 {
-    
+    std::shared_ptr<BaseAST> LHS = ParseMulExpr();
+    std::shared_ptr<ExprAST> expr;
+    if (curIdentifier == "+" || curIdentifier == "-")
+    {
+        expr = std::make_shared<ExprAST>(curIdentifier);
+        GetNextToken(); //eat op;
+        expr->LHS = LHS;
+        expr->RHS = ParseAddExpr();
+        return expr;
+    }
+    else
+    {
+        return LHS;
+    }
+    return nullptr;
+}
+
+std::shared_ptr<BaseAST> Parser::ParseMulExpr()
+{
+    std::shared_ptr<BaseAST> LHS = ParseUnaryExpr();
+    std::shared_ptr<ExprAST> expr;
+    if (curIdentifier == "*" || curIdentifier == "/" || curIdentifier == "%")
+    {
+        expr = std::make_shared<ExprAST>(curIdentifier);
+        GetNextToken(); //eat op;
+        expr->LHS = LHS;
+        expr->RHS = ParseMulExpr();
+        return expr;
+    }
+    else
+    {
+        return LHS;
+    }
+    return nullptr;
+}
+
+std::shared_ptr<BaseAST> Parser::ParseUnaryExpr()
+{
+    if (curIdentifier == "+" || curIdentifier == "-" || curIdentifier == "!")
+    {
+        std::shared_ptr<ExprAST> expr = std::make_shared<ExprAST>(curIdentifier);
+        GetNextToken(); //eat op;
+        expr->LHS = ParseUnaryExpr();
+        return expr;
+    }
+    else if (curToken == TOK_IDENTIFIER)
+    {
+        if (nextIdentifier == "(")
+            return ParseFunctionCall();
+    }
+    return ParsePrimaryExpr();
+}
+
+std::shared_ptr<BaseAST> Parser::ParsePrimaryExpr()
+{
+    if (curIdentifier == "(")
+    {
+        GetNextToken(); //eat (
+        std::shared_ptr<BaseAST> expr = ParseExpr();
+        GetNextToken(); //eat )
+        return expr;
+    }
+    else if (curToken == TOK_NUMBER)
+    {
+        std::shared_ptr<BaseAST> number = std::make_shared<LiteralAST>(curNumVal);
+        GetNextToken(); //eat num;
+        return number;
+    }
+    else
+    {
+        return ParseLValue();
+    }
+    return nullptr;
+}
+
+std::shared_ptr<FunctionAST> Parser::ParseFunctionCall()
+{
+    std::string name;
+    name = curIdentifier;
+    GetNextToken(); //eat name;
+    std::vector<std::shared_ptr<VariableAST>> params = ParseCallParam();
+    std::shared_ptr<FunctionAST> funcCall = std::make_shared<FunctionAST>("", name, params);
+    return funcCall;
+}
+
+std::vector<std::shared_ptr<VariableAST>> Parser::ParseCallParam()
+{
+    std::vector<std::shared_ptr<VariableAST>> params;
+    std::shared_ptr<VariableAST> param;
+    GetNextToken(); //eat (
+    while (curIdentifier != ")")
+    {
+        std::string name = curIdentifier;
+        GetNextToken(); //eat name
+        param = std::make_shared<VariableAST>("", name, false);
+        params.emplace_back(param);
+        if (curIdentifier == ",")
+            GetNextToken(); //eat ,
+    }
+    GetNextToken(); //eat )
+    return params;
+}
+
+std::shared_ptr<BaseAST> Parser::ParseLOrExpr()
+{
+    std::shared_ptr<BaseAST> LHS = ParseLAndExpr();
+    std::shared_ptr<ExprAST> expr;
+    if (curIdentifier == "||")
+    {
+        expr = std::make_shared<ExprAST>(curIdentifier);
+        GetNextToken(); //eat op;
+        expr->LHS = LHS;
+        expr->RHS = ParseLOrExpr();
+        return expr;
+    }
+    else
+    {
+        return LHS;
+    }
+    return nullptr;
+}
+
+std::shared_ptr<BaseAST> Parser::ParseLAndExpr()
+{
+    std::shared_ptr<BaseAST> LHS = ParseEqExpr();
+    std::shared_ptr<ExprAST> expr;
+    if (curIdentifier == "&&")
+    {
+        expr = std::make_shared<ExprAST>(curIdentifier);
+        GetNextToken(); //eat op;
+        expr->LHS = LHS;
+        expr->RHS = ParseLAndExpr();
+        return expr;
+    }
+    else
+    {
+        return LHS;
+    }
+    return nullptr;
+}
+std::shared_ptr<BaseAST> Parser::ParseEqExpr()
+{
+    std::shared_ptr<BaseAST> LHS = ParseRelExpr();
+    std::shared_ptr<ExprAST> expr;
+    if (curIdentifier == "==" || curIdentifier == "!=")
+    {
+        expr = std::make_shared<ExprAST>(curIdentifier);
+        GetNextToken(); //eat op;
+        expr->LHS = LHS;
+        expr->RHS = ParseEqExpr();
+        return expr;
+    }
+    else
+    {
+        return LHS;
+    }
+    return nullptr;
+}
+std::shared_ptr<BaseAST> Parser::ParseRelExpr()
+{
+    std::shared_ptr<BaseAST> LHS = ParseAddExpr();
+    std::shared_ptr<ExprAST> expr;
+    if (curIdentifier == "<" || curIdentifier == ">" ||
+        curIdentifier == "<=" || curIdentifier == ">=")
+    {
+        expr = std::make_shared<ExprAST>(curIdentifier);
+        GetNextToken(); //eat op;
+        expr->LHS = LHS;
+        expr->RHS = ParseRelExpr();
+        return expr;
+    }
+    else
+    {
+        return LHS;
+    }
+    return nullptr;
 }
 
 void Parser::LogError()
@@ -299,267 +522,3 @@ void Parser::LogParse(const std::string &str)
     fprintf(stderr, "%s%s\n", indent.c_str(), str.c_str());
 #endif
 }
-
-/*
-std::shared_ptr<BaseAST> Parser::ParseBody()
-{
-    GetNextToken(); //eat {
-    while (curToken == tok_type)
-    {
-        ParseDecl();
-    }
-    while(curToken != tok_rbrace)
-    {
-        ParseStmt();
-    }
-
-    GetNextToken(); //eat }
-    return nullptr;
-}
-std::shared_ptr<BaseAST> Parser::ParseDecl()
-{
-    LogParse("Parsing decl");
-    depth++;
-
-    std::string type, name;
-    bool isArray = false;
-    bool isPointer = false;
-    int size = 0;
-    int integer = 0;
-    bool boolean = 0;
-    char character = '\0';
-    char *str = NULL;
-
-    type = curIdentifier;
-    GetNextToken(); //eat type
-    if (curIdentifier == "*")
-    {
-        isPointer = true;
-        GetNextToken(); //eat *
-    }
-    name = curIdentifier;
-    GetNextToken(); //eat name
-    if (curToken == tok_lbracket)
-    {
-        isArray = true;
-        GetNextToken(); //eat [
-        size = lexer->numVal;
-        LogParse("VecSize: " + curIdentifier);
-        GetNextToken(); //eat num
-        GetNextToken(); //eat ]
-    }
-    if (curIdentifier == "=")
-    {
-        GetNextToken(); //eat =
-        if (curToken == tok_number)
-        {
-            if (type != "int")
-                LogError();
-            integer = curNumVal;
-            depth--;
-            LogParse("Parsed decl with val");
-            GetNextToken(); //eat val
-            GetNextToken(); //eat semi
-            return std::make_shared<VariableAST>(type, name, integer);
-        }
-        else if (curToken == tok_char)
-        {
-            if (type != "char")
-                LogError();
-            character = curIdentifier[0];
-            depth--;
-            LogParse("Parsed decl with val");
-            GetNextToken(); //eat val
-            GetNextToken(); //eat semi
-            return std::make_shared<VariableAST>(type, name, character);
-        }
-        else if (curToken == tok_tf)
-        {
-            if (type != "bool")
-                LogError();
-            if (curIdentifier == "true")
-                boolean = true;
-            else
-                boolean = false;
-            depth--;
-            LogParse("Parsed decl with val");
-            GetNextToken(); //eat val
-            GetNextToken(); //eat semi
-            return std::make_shared<VariableAST>(type, name, boolean);
-        }
-        else if (curToken == tok_str)
-        {
-            if (type != "string")
-                LogError();
-            depth--;
-            LogParse("Parsed decl with val");
-            GetNextToken(); //eat val
-            GetNextToken(); //eat semi
-            return std::make_shared<VariableAST>(type, name, curIdentifier);
-        }
-    }
-    else
-    {
-        depth--;
-        LogParse("Parsed decl");
-        GetNextToken(); //eat semi
-        return std::make_shared<VariableAST>(type, name);
-    }
-    GetNextToken(); //eat semi
-    depth--;
-    LogParse("Parsed decl");
-    return nullptr;
-}
-
-
-
-std::shared_ptr<BaseAST> Parser::ParseExpr()
-{
-    return nullptr;
-}
-
-std::shared_ptr<BaseAST> Parser::ParseSimple()
-{
-    return nullptr;
-}
-
-
-void ProgAST::Traverse(int depth)
-{
-    std::cout << "Traversing program" << std::endl;
-    std::cout << "size " << children.size() << std::endl;
-    for (int i = 0; i < children.size(); i++)
-    {
-        children[i]->Traverse(depth + 1);
-    }
-}
-
-std::shared_ptr<StmtAST> Parser::ParseStmt()
-{
-    LogParse("Parsing Stmt");
-    depth++;
-    std::string type = "unknown";
-    std::shared_ptr<StmtAST> stmt = nullptr;
-    std::shared_ptr<BaseAST> child;
-    std::vector<std::shared_ptr<BaseAST>> children;
-    if (curIdentifier == "if")
-    {
-        type = "if";
-        GetNextToken(); //eat if
-        GetNextToken(); //eat (
-        child = ParseExpr();
-        if(child)
-            children.emplace_back(std::move(child));
-        GetNextToken(); //eat )
-        child = ParseStmt();
-        if(child)
-            children.emplace_back(std::move(child));
-        if(curIdentifier == "else")
-        {
-            child = ParseStmt();
-            if(child)
-                children.emplace_back(std::move(child));
-        }
-        stmt = std::make_shared<StmtAST>(type, children);
-    }
-    else if (curIdentifier == "while")
-    {
-        type = "while";
-        GetNextToken(); //eat while
-        GetNextToken(); //eat (
-        child = ParseExpr();
-        if(child)
-            children.emplace_back(std::move(child));
-        GetNextToken(); //eat )
-        child = ParseStmt();
-        if(child)
-            children.emplace_back(std::move(child));
-        stmt = std::make_shared<StmtAST>(type, children);
-    }
-    else if (curIdentifier == "for")
-    {
-        type = "for";
-        GetNextToken(); //eat for
-        GetNextToken(); //eat (
-        child = ParseSimple();
-        if(child)
-            children.emplace_back(std::move(child));
-        GetNextToken(); //eat ;
-        child = ParseExpr();
-        if(child)
-            children.emplace_back(std::move(child));
-        GetNextToken(); //eat ;
-        child = ParseSimple();
-        if(child)
-            children.emplace_back(std::move(child));
-        GetNextToken(); //eat )
-        if(curIdentifier == "else")
-        {
-            child = ParseExpr();
-            if(child)
-                children.emplace_back(std::move(child));
-        }
-        stmt = std::make_shared<StmtAST>(type, children);
-    }
-    else if (curIdentifier == "continue")
-    {
-        type = "continue";
-        GetNextToken(); //eat continue
-        GetNextToken(); //eat ;
-        stmt = std::make_shared<StmtAST>(type);
-    }
-    else if (curIdentifier == "break")
-    {
-        type = "break";
-        GetNextToken(); //eat break;
-        GetNextToken(); //eat ;
-        stmt = std::make_shared<StmtAST>(type);
-    }
-    else if (curIdentifier == "return")
-    {
-        type = "return";
-        GetNextToken(); //eat return
-        if(curToken != tok_semi)
-        {
-            child = ParseExpr();
-            if(child)
-                children.emplace_back(std::move(child));
-        }
-        GetNextToken(); //eat ;
-        stmt = std::make_shared<StmtAST>(type, children);
-    }
-    else if (curToken == tok_lbrace)
-    {
-        type = "body";
-        GetNextToken(); //eat {
-        child = ParseBody();
-        if(child)
-            children.emplace_back(child);
-        GetNextToken(); //eat }
-        stmt = std::make_shared<StmtAST>(type, children);
-    }
-    else if (curIdentifier == "assert")
-    {
-        type = "assert";
-        GetNextToken(); //eat assert
-        GetNextToken(); //eat (
-        child = ParseExpr();
-        if(child)
-            children.emplace_back(std::move(child));
-        GetNextToken(); //eat ,
-        child = ParseExpr();
-        if(child)
-            children.emplace_back(std::move(child));
-        GetNextToken(); //eat )
-        GetNextToken(); //eat ;
-        stmt = std::make_shared<StmtAST>(type, children);
-    }
-    else if (curToken == tok_semi)
-    {
-        LogParse("Empty Stmt");
-    }
-    depth--;
-    LogParse("Parsed Stmt");
-    return stmt;
-}
-*/
