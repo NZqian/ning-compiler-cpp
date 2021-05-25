@@ -1,6 +1,13 @@
 #pragma once
 #include "global.hpp"
 
+enum Visit_type
+{
+    VISIT_OUTPUT,
+    VISIT_JSON,
+    VISIT_CHECK,
+};
+
 enum Tok_type
 {
     TOK_EOF = -127,

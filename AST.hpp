@@ -173,6 +173,7 @@ public:
     ExprAST(const std::string &str) : op(str) {}
     void Traverse(int depth)
     {
+        
         std::string tab;
         for (int i = 0; i < depth; i++)
             tab += "  ";
@@ -182,3 +183,20 @@ public:
             RHS->Traverse(depth+1);
     }
 };
+
+/*
+class ASTVisitor
+{
+    public:
+    void visit(BaseAST ast, Visit_type type)
+    {
+        switch(type)
+        {
+            case VISIT_OUTPUT:
+            break;
+            default:
+            fprintf(stderr, "%s", "unknown type\n");
+        }
+    }
+};
+*/
