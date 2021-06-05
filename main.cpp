@@ -3,7 +3,7 @@
 #include "type.hpp"
 #include "parser.hpp"
 
-#define LEXER_ONLY flase
+#define LEXER_ONLY false
 #define PARSER_ONLY true
 
 int main(int argc, char **argv)
@@ -11,7 +11,8 @@ int main(int argc, char **argv)
     std::string filename;
     if (argc < 2)
     {
-        std::cout << "input file name" << std::endl;
+        std::cout << "Usage: " << argv[0] << " [options] input_file" << std::endl;
+        exit(0);
     }
     else
     {
@@ -32,6 +33,7 @@ int main(int argc, char **argv)
 #if PARSER_ONLY
     std::shared_ptr<Parser> parser = std::make_shared<Parser>(filename);
     std::shared_ptr<ProgAST> root = parser->Parse();
-    root->Traverse(0);
+    Visitor visitor;
+    root->Traverse(visitor, SHOW);
 #endif
 }

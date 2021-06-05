@@ -1,6 +1,6 @@
 #include "parser.hpp"
 #define LEXER_DEBUG 0
-#define PARSER_DEBUG 1
+#define PARSER_DEBUG 0
 Parser::Parser(const std::string &filename)
 {
     binopPrecedence[""] = 10;
@@ -112,25 +112,29 @@ std::shared_ptr<FunctionAST> Parser::ParseFunction(const std::string &returnType
     if (curIdentifier == "{")
     {
         std::shared_ptr<BlockAST> body = ParseBlock();
-        std::cout << "parsed function definition" << std::endl;
+        LogParse("parsed function definition");
         return std::make_shared<FunctionAST>(returnType, name,
                                              std::move(parameters), std::move(body));
     }
     else
     {
         GetNextToken(); //eat ;
-        std::cout << "parsed function decleartion" << std::endl;
+        LogParse("parsed function declearation");
         return std::make_shared<FunctionAST>(returnType, name, std::move(parameters));
     }
 }
+
 std::shared_ptr<VariableAST> Parser::ParseVariable(const std::string &type, const std::string &name, bool isConst)
 {
-    std::vector<int> dimensions;
+    std::vector<std::shared_ptr<BaseAST> > dimensions;
     while (curIdentifier == "[") //数组
     {
         GetNextToken(); //eat [
-        dimensions.emplace_back(curNumVal);
-        GetNextToken(); //eat num
+        std::shared_ptr<BaseAST> dimension;
+        dimension = ParseAddExpr();
+        if(dimension)
+            dimensions.emplace_back(dimension);
+        //dimensions.emplace_back(curNumVal);
         GetNextToken(); //eat ]
     }
     if (curIdentifier == "=")
@@ -144,9 +148,10 @@ std::shared_ptr<VariableAST> Parser::ParseVariable(const std::string &type, cons
     GetNextToken(); //eat ;
     std::shared_ptr<VariableAST> variable =
         std::make_shared<VariableAST>(type, name, isConst, dimensions);
-    std::cout << "parsed variable " << name << std::endl;
+    LogParse("parsed variable");
     return variable;
 }
+
 std::shared_ptr<VariableAST> Parser::ParseVariable()
 {
     bool isConst = false;
@@ -154,12 +159,12 @@ std::shared_ptr<VariableAST> Parser::ParseVariable()
     if (curToken == TOK_CONST)
     {
         isConst = true;
-        GetNextToken(); //eat const;
+        GetNextToken(); //eat const
     }
     type = curIdentifier;
     GetNextToken(); //eat type
     name = curIdentifier;
-    GetNextToken(); //eat name;
+    GetNextToken(); //eat name
     return ParseVariable(type, name, isConst);
 }
 
@@ -168,12 +173,14 @@ std::shared_ptr<VariableAST> Parser::ParseLValue()
     std::string name;
     name = curIdentifier;
     GetNextToken();
-    std::vector<int> dimensions;
+    std::vector<std::shared_ptr<BaseAST> > dimensions;
     while (curIdentifier == "[") //数组
     {
         GetNextToken(); //eat [
-        dimensions.emplace_back(curNumVal);
-        GetNextToken(); //eat num
+        std::shared_ptr<BaseAST> dimension;
+        dimension = ParseAddExpr();
+        if(dimension)
+            dimensions.emplace_back(dimension);
         GetNextToken(); //eat ]
     }
     return std::make_shared<VariableAST>("", name, false, dimensions);
@@ -183,13 +190,22 @@ std::shared_ptr<BaseAST> Parser::ParseStmt()
 {
     if (curToken == TOK_IDENTIFIER)
     {
-        std::shared_ptr<VariableAST> lval = ParseLValue();
-        GetNextToken(); //eat =
-        std::shared_ptr<BaseAST> expr = ParseExpr();
-        GetNextToken(); //eat ;
-        std::vector<std::shared_ptr<BaseAST>> children{lval, expr};
-        std::cout << "parsed assign" << std::endl;
-        return std::make_shared<StmtAST>(STMT_ASSIGN, children);
+        if(nextIdentifier == "=" || nextIdentifier == "[")  //LVal=Exp
+        {
+            std::shared_ptr<VariableAST> lval = ParseLValue();
+            GetNextToken(); //eat =
+            std::shared_ptr<BaseAST> expr = ParseExpr();
+            GetNextToken(); //eat ;
+            std::vector<std::shared_ptr<BaseAST>> children{lval, expr};
+            LogParse("parsed assign");
+            return std::make_shared<StmtAST>(STMT_ASSIGN, children);
+        }
+        else    //[Exp]
+        {
+            std::shared_ptr<BaseAST> stmt = ParseExpr();
+            GetNextToken();
+            return stmt;
+        }
     }
     else if (curToken == TOK_IF)
     {
@@ -214,12 +230,6 @@ std::shared_ptr<BaseAST> Parser::ParseStmt()
     else if (curIdentifier == "{")
     {
         return ParseBlock();
-    }
-    else//[Exp];
-    {
-        std::shared_ptr<BaseAST> stmt = ParseExpr();
-        GetNextToken();
-        return stmt;
     }
     return nullptr;
 }
@@ -265,6 +275,7 @@ std::shared_ptr<StmtAST> Parser::ParseWhile()
     children.emplace_back(child);
     return std::make_shared<StmtAST>(STMT_WHILE, children);
 }
+
 std::shared_ptr<StmtAST> Parser::ParseBreak()
 {
     GetNextToken(); //eat break
@@ -272,6 +283,7 @@ std::shared_ptr<StmtAST> Parser::ParseBreak()
     std::vector<std::shared_ptr<BaseAST>> children;
     return std::make_shared<StmtAST>(STMT_BREAK, children);
 }
+
 std::shared_ptr<StmtAST> Parser::ParseContinue()
 {
     GetNextToken(); //eat continue
@@ -279,6 +291,7 @@ std::shared_ptr<StmtAST> Parser::ParseContinue()
     std::vector<std::shared_ptr<BaseAST>> children;
     return std::make_shared<StmtAST>(STMT_CONTINUE, children);
 }
+
 std::shared_ptr<StmtAST> Parser::ParseReturn()
 {
     GetNextToken(); //eat continue

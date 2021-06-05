@@ -71,7 +71,7 @@ Tok_type Lexer::GetTok()
         {
         case state_start:
         {
-            while (curChar == ' ' || curChar == '\n' || curChar == '\r' || curChar == '\0') //skip blank
+            while (curChar == ' ' || curChar == '\n' || curChar == '\r' || curChar == '\0' || curChar == '\t') //skip blank
                 GetNextChar();
             if (curChar == EOF)
                 return TOK_EOF;

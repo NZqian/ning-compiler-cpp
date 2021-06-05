@@ -41,6 +41,8 @@ enum Stmt_type
     STMT_BLANK
 };
 
+extern std::map<Stmt_type, std::string> Stmt_type2str;
+
 /*
 enum Expr_type
 {

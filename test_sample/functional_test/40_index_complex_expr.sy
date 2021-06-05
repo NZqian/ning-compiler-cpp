@@ -1,5 +1,6 @@
 // Use complex expression in assign structure
 int main () {
+    putint(t);
     int a;
     int b;
     int c;
