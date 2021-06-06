@@ -1,20 +1,24 @@
+#pragma once
 #include "global.hpp"
 #include "type.hpp"
 
 class BaseAST;
+class SymTable;
 
 class Visitor
 {
     std::string indent;
+    std::shared_ptr<SymTable> symtable;
 public:
     Visitor();
     void Show(BaseAST *ast);
+    void Analyze(BaseAST *ast);
 };
 
 enum VisitType
 {
     SHOW,
-    TYPE_CHECK,
+    ANALYZE,
 
 };
 
@@ -28,7 +32,14 @@ public:
         {
         case SHOW:
             visitor.Show(this);
+            break;
+        case ANALYZE:
+            visitor.Analyze(this);
         }
+    }
+    virtual bool IsLiteral()
+    {
+        return false;
     }
 };
 
@@ -73,35 +84,39 @@ public:
     int val;
 
     LiteralAST(int val) : val(val) {}
+    bool IsLiteral()
+    {
+        return true;
+    }
 };
 
 class VariableAST : public BaseAST
 {
 public:
-    std::string type;
+    BType type;
     std::string name;
     bool isConst;
     std::vector<std::shared_ptr<BaseAST>> dimensions;
     std::shared_ptr<InitValAST> val;
 
-    VariableAST(const std::string &type, const std::string &name, bool isConst)
+    VariableAST(BType type, const std::string &name, bool isConst)
         : type(type), name(name), isConst(isConst) {}
-    VariableAST(const std::string &type, const std::string &name, bool isConst, std::vector<std::shared_ptr<BaseAST>> dimensions)
+    VariableAST(BType type, const std::string &name, bool isConst, std::vector<std::shared_ptr<BaseAST>> dimensions)
         : type(type), name(name), isConst(isConst), dimensions(dimensions) {}
 };
 
 class FunctionAST : public BaseAST
 {
 public:
-    std::string returnType;
+    BType returnType;
     std::string name;
     std::vector<std::shared_ptr<VariableAST>> parameters;
     std::shared_ptr<BlockAST> body;
 
-    FunctionAST(const std::string &returnType, const std::string &name,
+    FunctionAST(BType returnType, const std::string &name,
                 std::vector<std::shared_ptr<VariableAST>> parameters, std::shared_ptr<BlockAST> body)
         : returnType(returnType), name(name), parameters(std::move(parameters)), body(std::move(body)) {}
-    FunctionAST(const std::string &returnType, const std::string &name,
+    FunctionAST(BType returnType, const std::string &name,
                 std::vector<std::shared_ptr<VariableAST>> parameters)
         : returnType(returnType), name(name), parameters(std::move(parameters))
     {
@@ -126,7 +141,13 @@ class ExprAST : public BaseAST
 public:
     int val;
     std::string op;
+    bool is_literal;
+    BType type;
 
     std::shared_ptr<BaseAST> LHS, RHS;
     ExprAST(const std::string &str) : op(str) {}
+    bool IsLiteral()
+    {
+        return is_literal;
+    }
 };

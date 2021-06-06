@@ -1,6 +1,19 @@
 #pragma once
 #include "global.hpp"
 
+enum DefinitionType
+{
+    FUNCTION,
+    VARIABLE
+};
+
+enum BType
+{
+    INT,
+    VOID,
+    NONE,
+};
+
 enum Visit_type
 {
     VISIT_OUTPUT,
@@ -38,10 +51,12 @@ enum Stmt_type
     STMT_RETURN,
     STMT_BODY,
     STMT_ASSIGN,
-    STMT_BLANK
+    STMT_BLANK,
+    STMT_EXPR,
 };
 
 extern std::map<Stmt_type, std::string> Stmt_type2str;
+extern std::map<BType, std::string> BType2Str;
 
 /*
 enum Expr_type

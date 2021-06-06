@@ -34,6 +34,7 @@ int main(int argc, char **argv)
     std::shared_ptr<Parser> parser = std::make_shared<Parser>(filename);
     std::shared_ptr<ProgAST> root = parser->Parse();
     Visitor visitor;
+    root->Traverse(visitor, ANALYZE);   //type check and construct symtable
     root->Traverse(visitor, SHOW);
 #endif
 }

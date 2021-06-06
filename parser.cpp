@@ -1,6 +1,6 @@
 #include "parser.hpp"
 #define LEXER_DEBUG 0
-#define PARSER_DEBUG 0
+#define PARSER_DEBUG 1
 Parser::Parser(const std::string &filename)
 {
     binopPrecedence[""] = 10;
@@ -92,8 +92,12 @@ std::shared_ptr<BaseAST> Parser::ParseDefinition()
     }
     if (curToken == TOK_INT || curToken == TOK_VOID)
     {
-        std::string type, name;
-        type = curIdentifier;
+        BType type = NONE;
+        std::string name;
+        if(curIdentifier == "int")
+            type = INT;
+        else if(curIdentifier == "void")
+            type = VOID;
         GetNextToken(); //eat type
         name = curIdentifier;
         GetNextToken(); //eat name
@@ -106,7 +110,7 @@ std::shared_ptr<BaseAST> Parser::ParseDefinition()
     return nullptr;
 }
 
-std::shared_ptr<FunctionAST> Parser::ParseFunction(const std::string &returnType, const std::string &name)
+std::shared_ptr<FunctionAST> Parser::ParseFunction(BType returnType, const std::string &name)
 {
     std::vector<std::shared_ptr<VariableAST>> parameters = ParseDefParam();
     if (curIdentifier == "{")
@@ -124,7 +128,7 @@ std::shared_ptr<FunctionAST> Parser::ParseFunction(const std::string &returnType
     }
 }
 
-std::shared_ptr<VariableAST> Parser::ParseVariable(const std::string &type, const std::string &name, bool isConst)
+std::shared_ptr<VariableAST> Parser::ParseVariable(BType type, const std::string &name, bool isConst)
 {
     std::vector<std::shared_ptr<BaseAST> > dimensions;
     while (curIdentifier == "[") //数组
@@ -155,13 +159,17 @@ std::shared_ptr<VariableAST> Parser::ParseVariable(const std::string &type, cons
 std::shared_ptr<VariableAST> Parser::ParseVariable()
 {
     bool isConst = false;
-    std::string name, type;
+    std::string name;
+    BType type = NONE;
     if (curToken == TOK_CONST)
     {
         isConst = true;
         GetNextToken(); //eat const
     }
-    type = curIdentifier;
+    if(curIdentifier == "int")
+        type = INT;
+    else if(curIdentifier == "void")
+        type = VOID;
     GetNextToken(); //eat type
     name = curIdentifier;
     GetNextToken(); //eat name
@@ -183,12 +191,12 @@ std::shared_ptr<VariableAST> Parser::ParseLValue()
             dimensions.emplace_back(dimension);
         GetNextToken(); //eat ]
     }
-    return std::make_shared<VariableAST>("", name, false, dimensions);
+    return std::make_shared<VariableAST>(BType::NONE, name, false, dimensions);
 }
 
 std::shared_ptr<BaseAST> Parser::ParseStmt()
 {
-    if (curToken == TOK_IDENTIFIER)
+    if (curToken == TOK_IDENTIFIER || curToken == TOK_NUMBER)
     {
         if(nextIdentifier == "=" || nextIdentifier == "[")  //LVal=Exp
         {
@@ -202,7 +210,7 @@ std::shared_ptr<BaseAST> Parser::ParseStmt()
         }
         else    //[Exp]
         {
-            std::shared_ptr<BaseAST> stmt = ParseExpr();
+            std::shared_ptr<BaseAST> stmt = std::make_shared<StmtAST>(STMT_EXPR, std::vector<std::shared_ptr<BaseAST>>{ParseExpr()});
             GetNextToken();
             return stmt;
         }
@@ -230,6 +238,12 @@ std::shared_ptr<BaseAST> Parser::ParseStmt()
     else if (curIdentifier == "{")
     {
         return ParseBlock();
+    }
+    else
+    {
+        std::shared_ptr<StmtAST> stmt = std::make_shared<StmtAST>(STMT_BLANK, std::vector<std::shared_ptr<BaseAST>>{});
+        GetNextToken();
+        return stmt;
     }
     return nullptr;
 }
@@ -419,7 +433,7 @@ std::shared_ptr<FunctionAST> Parser::ParseFunctionCall()
     name = curIdentifier;
     GetNextToken(); //eat name;
     std::vector<std::shared_ptr<VariableAST>> params = ParseCallParam();
-    std::shared_ptr<FunctionAST> funcCall = std::make_shared<FunctionAST>("", name, params);
+    std::shared_ptr<FunctionAST> funcCall = std::make_shared<FunctionAST>(BType::NONE, name, params);
     return funcCall;
 }
 
@@ -432,7 +446,7 @@ std::vector<std::shared_ptr<VariableAST>> Parser::ParseCallParam()
     {
         std::string name = curIdentifier;
         GetNextToken(); //eat name
-        param = std::make_shared<VariableAST>("", name, false);
+        param = std::make_shared<VariableAST>(BType::NONE, name, false);
         params.emplace_back(param);
         if (curIdentifier == ",")
             GetNextToken(); //eat ,

@@ -5,6 +5,8 @@
 #include <map>
 #include <fstream>
 #include <set>
+#include <algorithm>
+
 enum State
 {
     state_start,

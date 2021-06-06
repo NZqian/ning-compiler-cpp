@@ -22,9 +22,9 @@ class Parser
     void ParseTypeDef();
     std::shared_ptr<BlockAST> ParseBlock();
     std::shared_ptr<BaseAST> ParseDefinition();
-    std::shared_ptr<FunctionAST> ParseFunction(const std::string &type, const std::string &name);
+    std::shared_ptr<FunctionAST> ParseFunction(BType type, const std::string &name);
     std::shared_ptr<FunctionAST> ParseFunctionCall();
-    std::shared_ptr<VariableAST> ParseVariable(const std::string &type, const std::string &name, bool isConst);
+    std::shared_ptr<VariableAST> ParseVariable(BType type, const std::string &name, bool isConst);
     std::shared_ptr<VariableAST> ParseLValue();
     std::shared_ptr<VariableAST> ParseVariable();
     std::vector<std::shared_ptr<VariableAST>> ParseDefParam();
