@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/ning",   // 将要进行调试的程序的路径
             //"args": ["${workspaceFolder}/test_sample/functional_test/38_if_complex_expr.sy"],
-            "args": ["${workspaceFolder}/test_sample/functional_test/24_if_test3.sy"],
+            "args": ["${workspaceFolder}/test_sample/functional_test/54_sort_test2.sy"],
             //"args": ["${workspaceFolder}/test_sample/functional_test/40_index_complex_expr.sy"],
             "stopAtEntry": false,                        // 设为true时程序将暂停在程序入口处
             "cwd": "${workspaceFolder}",        // 调试程序时的工作目录
@@ -24,7 +24,11 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "build_debug"                        // 调试会话开始前执行的任务，一般为编译程序
-        }
+            "preLaunchTask": "build_debug",                        // 调试会话开始前执行的任务，一般为编译程序
+            "logging": 
+            {
+            "engineLogging": true
+            }
+        },
     ]
 }
