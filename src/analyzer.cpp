@@ -2,11 +2,6 @@
 #include "type.hpp"
 #include "symtable.hpp"
 
-Visitor::Visitor()
-{
-    indent = "";
-    symtable = std::make_shared<SymTable>();
-}
 
 void Visitor::Show(BaseAST *ast)
 {
@@ -48,6 +43,8 @@ void Visitor::Show(BaseAST *ast)
             std::cout << "const" << std::endl;
         else
             std::cout << std::endl;
+        if(var->val)
+            var->val->Traverse(*this, SHOW);
         indent.pop_back();
         indent.pop_back();
     }
@@ -110,6 +107,8 @@ void Visitor::Analyze(BaseAST *ast)
     else if (typeid(*ast) == typeid(VariableAST))
     {
         VariableAST *var = (VariableAST *)ast;
+        if(var->val)
+            var->val->Traverse(*this, SHOW);
         if(var->type == INT)
         {
             if(!symtable->Insert(var, var->name, VARIABLE))

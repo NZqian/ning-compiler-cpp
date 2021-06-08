@@ -149,7 +149,7 @@ std::shared_ptr<FunctionAST> Parser::ParseFunction(BType returnType, const std::
 std::shared_ptr<VariableAST> Parser::ParseVariable(BType type, const std::string &name, bool isConst)
 {
     std::vector<std::shared_ptr<BaseAST> > dimensions;
-    std::shared_ptr<InitValAST> initVal;
+    std::shared_ptr<BaseAST> initVal;
     while (curIdentifier == "[") //数组
     {
         GetNextToken(); //eat [
@@ -169,10 +169,11 @@ std::shared_ptr<VariableAST> Parser::ParseVariable(BType type, const std::string
         GetNextToken(); //eat =
         initVal = ParseVariableInitVal();
     }
+    std::shared_ptr<VariableAST> variable;
     if(initVal)
-        std::shared_ptr<VariableAST> variable = std::make_shared<VariableAST>(type, name, isConst, dimensions, initVal);
-
-    std::shared_ptr<VariableAST> variable = std::make_shared<VariableAST>(type, name, isConst, dimensions);
+        variable = std::make_shared<VariableAST>(type, name, isConst, dimensions, initVal);
+    else
+        variable = std::make_shared<VariableAST>(type, name, isConst, dimensions);
     LogParse("parsed variable");
     return variable;
 }
@@ -213,9 +214,9 @@ std::vector<std::shared_ptr<VariableAST> > Parser::ParseVariable()
     return variables;
 }
 
-std::shared_ptr<InitValAST> Parser::ParseVariableInitVal()
+std::shared_ptr<BaseAST> Parser::ParseVariableInitVal()
 {
-    std::shared_ptr<InitValAST> init = nullptr;
+    std::shared_ptr<BaseAST> init = nullptr;
     int depth = 0;
     if (curIdentifier == "{")
     {
@@ -231,7 +232,7 @@ std::shared_ptr<InitValAST> Parser::ParseVariableInitVal()
         }
     }
     else
-        ParseExpr();
+        init = ParseExpr();
     return init;
 }
 

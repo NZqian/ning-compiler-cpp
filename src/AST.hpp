@@ -4,22 +4,29 @@
 
 class BaseAST;
 class SymTable;
+class ThreeAddress;
+class ThreeAddressCode;
 
 class Visitor
 {
     std::string indent;
     std::shared_ptr<SymTable> symtable;
+    std::shared_ptr<ThreeAddress> curCode;
+    void *tmpAddress;
+
 public:
+    std::shared_ptr<ThreeAddressCode> threeAddressCode;
     Visitor();
     void Show(BaseAST *ast);
     void Analyze(BaseAST *ast);
+    void GenThreeAddress(BaseAST *ast);
 };
 
 enum VisitType
 {
     SHOW,
     ANALYZE,
-
+    THREEADDRESS,
 };
 
 class BaseAST
@@ -35,6 +42,10 @@ public:
             break;
         case ANALYZE:
             visitor.Analyze(this);
+            break;
+        case THREEADDRESS:
+            visitor.GenThreeAddress(this);
+            break;
         }
     }
     virtual bool IsLiteral()
@@ -97,13 +108,13 @@ public:
     std::string name;
     bool isConst;
     std::vector<std::shared_ptr<BaseAST>> dimensions;
-    std::shared_ptr<InitValAST> val;
+    std::shared_ptr<BaseAST> val;
 
     VariableAST(BType type, const std::string &name, bool isConst)
         : type(type), name(name), isConst(isConst) {}
     VariableAST(BType type, const std::string &name, bool isConst, std::vector<std::shared_ptr<BaseAST>> dimensions)
         : type(type), name(name), isConst(isConst), dimensions(dimensions) {}
-    VariableAST(BType type, const std::string &name, bool isConst, std::vector<std::shared_ptr<BaseAST>> dimensions, std::shared_ptr<InitValAST> val)
+    VariableAST(BType type, const std::string &name, bool isConst, std::vector<std::shared_ptr<BaseAST>> dimensions, std::shared_ptr<BaseAST> val)
         : type(type), name(name), isConst(isConst), dimensions(dimensions), val(val) {}
 };
 
