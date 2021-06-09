@@ -1,6 +1,6 @@
 #pragma once
-#include "global.hpp"
 #include "AST.hpp"
+#include "global.hpp"
 #include "type.hpp"
 
 class ThreeAddress;
@@ -8,7 +8,7 @@ class ThreeAddress;
 //一个地址
 class Address
 {
-    public:
+public:
     ThreeAddressType type;
     void *address;
     Address(ThreeAddressType type, void *address);
@@ -17,19 +17,19 @@ class Address
 //一条三地址码
 class ThreeAddress
 {
-    ThreeAddress *selfAddress;
+public:
     ThreeAddressOp op;
     std::vector<Address> addresses;
 
-    public:
+    ThreeAddress *selfAddress;
     ThreeAddress(ThreeAddressOp op, std::vector<Address> addresses);
     void Show();
 };
 
 class ThreeAddressCode
 {
-    public:
-    std::list<std::shared_ptr<ThreeAddress> > codes;
+public:
+    std::list<std::shared_ptr<ThreeAddress>> codes;
     ThreeAddressCode();
     void Show();
 };

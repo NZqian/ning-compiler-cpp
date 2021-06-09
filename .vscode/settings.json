@@ -4,6 +4,7 @@
         "*.tcc": "cpp",
         "cmath": "cpp",
         "functional": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "system_error": "cpp"
     }
 }

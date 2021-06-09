@@ -5,6 +5,7 @@
 #include <list>
 #include <map>
 #include <fstream>
+#include <ostream>
 #include <set>
 #include <algorithm>
 

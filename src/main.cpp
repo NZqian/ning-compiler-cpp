@@ -3,12 +3,13 @@
 #include "type.hpp"
 #include "parser.hpp"
 #include "three_address.hpp"
+#include "code_gen.hpp"
 
 #define LEXER_ONLY false
 #define PARSER true
 #define TYPECHECK true
 #define THREECODE true
-#define CODEGEN false
+#define CODEGEN true
 
 
 std::string filename;
@@ -60,19 +61,20 @@ int main(int argc, char **argv)
     std::shared_ptr<Parser> parser = std::make_shared<Parser>(filename);
     std::shared_ptr<ProgAST> root = parser->Parse();
 #if TYPECHECK
-    Visitor visitor;
+    Visitor *visitor = new Visitor();
     root->Traverse(visitor, ANALYZE);   //type check and construct symtable
     root->Traverse(visitor, SHOW);
 #if THREECODE
     root->Traverse(visitor, THREEADDRESS);
-    std::shared_ptr<ThreeAddressCode> codes = visitor.threeAddressCode;
+    std::shared_ptr<ThreeAddressCode> codes = visitor->threeAddressCode;
     codes->Show();
 #if CODEGEN
     if(useOptimizr)
     {
 
     }
-    lalalaasdfas
+    std::shared_ptr<CodeGener> codeGener = std::make_shared<CodeGener>(outputFilename, codes);
+    codeGener->GenCode();
 #endif  //codegen
 #endif  //threecode
 #endif  //typecheck

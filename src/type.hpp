@@ -57,7 +57,7 @@ enum Stmt_type
 enum ThreeAddressOp
 {
     THREE_OP_ASSIGN,
-    THREE_OP_PLUS,
+    THREE_OP_ADD,
     THREE_OP_MINUS,
     THREE_OP_MUL,
     THREE_OP_DIV,
@@ -71,6 +71,8 @@ enum ThreeAddressOp
     THREE_OP_OR,
     THREE_OP_FUNC_CALL,
     THREE_OP_FUNC_DEF,
+    THREE_OP_VAR_DEF,
+    THREE_OP_VAR_DECL,
 };
 
 enum ThreeAddressType
@@ -81,6 +83,16 @@ enum ThreeAddressType
     THREE_FUNCTION,
     THREE_EXPR,
 };
+
+/*
+enum AddressType
+{
+    ADDRESS_FUNCTION,
+    ADDRESS_VARIABLE,
+    ADDRESS_LITERAL,
+    ADDRESS_THREE,
+}
+*/
 
 extern std::map<Stmt_type, std::string> Stmt_type2str;
 extern std::map<BType, std::string> BType2Str;

@@ -110,14 +110,15 @@ std::vector<std::shared_ptr<BaseAST>> Parser::ParseDefinition()
         {
             std::vector<std::shared_ptr<BaseAST>> variables;
             std::shared_ptr<BaseAST> variable;
-            variable = ParseVariable(type, name, isConst);
+            bool isGlobal = true;
+            variable = ParseVariable(type, name, isConst, isGlobal);
             variables.emplace_back(variable);
             while(curIdentifier == ",")
             {
                 GetNextToken();
                 name = curIdentifier;
                 GetNextToken();
-                variable = ParseVariable(type, name, isConst);
+                variable = ParseVariable(type, name, isConst, isGlobal);
                 variables.emplace_back(variable);
             }
             GetNextToken(); //eat ;
@@ -146,7 +147,7 @@ std::shared_ptr<FunctionAST> Parser::ParseFunction(BType returnType, const std::
     }
 }
 
-std::shared_ptr<VariableAST> Parser::ParseVariable(BType type, const std::string &name, bool isConst)
+std::shared_ptr<VariableAST> Parser::ParseVariable(BType type, const std::string &name, bool isConst, bool isGlobal)
 {
     std::vector<std::shared_ptr<BaseAST> > dimensions;
     std::shared_ptr<BaseAST> initVal;
@@ -171,9 +172,9 @@ std::shared_ptr<VariableAST> Parser::ParseVariable(BType type, const std::string
     }
     std::shared_ptr<VariableAST> variable;
     if(initVal)
-        variable = std::make_shared<VariableAST>(type, name, isConst, dimensions, initVal);
+        variable = std::make_shared<VariableAST>(type, name, isConst, isGlobal, dimensions, initVal);
     else
-        variable = std::make_shared<VariableAST>(type, name, isConst, dimensions);
+        variable = std::make_shared<VariableAST>(type, name, isConst, isGlobal, dimensions);
     LogParse("parsed variable");
     return variable;
 }
@@ -199,7 +200,8 @@ std::vector<std::shared_ptr<VariableAST> > Parser::ParseVariable()
     {
         name = curIdentifier;
         GetNextToken(); //eat name
-        variable = ParseVariable(type, name, isConst);
+        //only definition in ParseDifinition is global
+        variable = ParseVariable(type, name, isConst, false);
         variables.emplace_back(variable);
         if(curIdentifier == ";")
         {
@@ -251,7 +253,7 @@ std::shared_ptr<VariableAST> Parser::ParseLValue()
             dimensions.emplace_back(dimension);
         GetNextToken(); //eat ]
     }
-    return std::make_shared<VariableAST>(BType::NONE, name, false, dimensions);
+    return std::make_shared<VariableAST>(BType::NONE, name, false, false, dimensions);
 }
 
 std::shared_ptr<BaseAST> Parser::ParseStmt()
@@ -414,7 +416,7 @@ std::shared_ptr<VariableAST> Parser::ParseParam()
         }
     }
 
-    return std::make_shared<VariableAST>(type, name, isConst, dimensions);
+    return std::make_shared<VariableAST>(type, name, isConst, false, dimensions);
 }
 
 std::vector<std::shared_ptr<VariableAST>> Parser::ParseDefParam()
@@ -544,7 +546,7 @@ std::vector<std::shared_ptr<VariableAST>> Parser::ParseCallParam()
     {
         std::string name = curIdentifier;
         GetNextToken(); //eat name
-        param = std::make_shared<VariableAST>(BType::NONE, name, false);
+        param = std::make_shared<VariableAST>(BType::NONE, name, false, false);
         params.emplace_back(param);
         if (curIdentifier == ",")
             GetNextToken(); //eat ,

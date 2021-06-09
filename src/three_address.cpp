@@ -21,19 +21,22 @@ void Visitor::GenThreeAddress(BaseAST *ast)
     {
         ProgAST *prog = (ProgAST *)ast;
         for (auto child : prog->children)
-            child->Traverse(*this, THREEADDRESS);
+            child->Traverse(this, THREEADDRESS);
     }
 
     else if (typeid(*ast) == typeid(BlockAST))
     {
         BlockAST *block = (BlockAST *)ast;
         for (auto child : block->children)
-            child->Traverse(*this, THREEADDRESS);
+            child->Traverse(this, THREEADDRESS);
     }
 
     else if (typeid(*ast) == typeid(LiteralAST))
     {
         LiteralAST *literal = (LiteralAST *)ast;
+        //std::shared_ptr<ThreeAddress> code = std::make_shared<ThreeAddress>(THREE_OP_ASSIGN, );
+        //threeAddressCode->codes.emplace_back(code);
+        //tmpAddress = code->selfAddress;
         tmpAddress = literal;
     }
 
@@ -41,12 +44,23 @@ void Visitor::GenThreeAddress(BaseAST *ast)
     {
         VariableAST *var = (VariableAST *)ast;
         tmpAddress = var;
+        std::vector<Address> addresses;
+        addresses.emplace_back(Address(THREE_VARIABLE, tmpAddress));
         //definition
         if (var->val)
         {
-            var->val->Traverse(*this, SHOW);
-            //ThreeAddress code = ThreeAddress(THREE_OP_FUNC_DEF, std::vector<Address>{Address(THREE_FUNCTION, func)});
-            //threeAddressCode->codes.emplace_back(code);
+            var->val->Traverse(this, THREEADDRESS);
+            if (var->val->TypeName() == typeid(LiteralAST).name())
+                addresses.emplace_back(Address(THREE_LITERAL, tmpAddress));
+            else
+                addresses.emplace_back(Address(THREE_ADDRESS, tmpAddress));
+            std::shared_ptr<ThreeAddress> code = std::make_shared<ThreeAddress>(THREE_OP_VAR_DEF, addresses);
+            threeAddressCode->codes.emplace_back(code);
+        }
+        else if(var->isGlobal)
+        {
+            std::shared_ptr<ThreeAddress> code = std::make_shared<ThreeAddress>(THREE_OP_VAR_DECL, addresses);
+            threeAddressCode->codes.emplace_back(code);
         }
     }
 
@@ -59,7 +73,7 @@ void Visitor::GenThreeAddress(BaseAST *ast)
             std::shared_ptr<ThreeAddress> code = std::make_shared<ThreeAddress>(THREE_OP_FUNC_DEF, std::vector<Address>{Address(THREE_FUNCTION, func)});
             curCode = code;
             threeAddressCode->codes.emplace_back(code);
-            func->body->Traverse(*this, THREEADDRESS);
+            func->body->Traverse(this, THREEADDRESS);
         }
         // function call
         else
@@ -75,7 +89,7 @@ void Visitor::GenThreeAddress(BaseAST *ast)
     {
         StmtAST *stmt = (StmtAST *)ast;
         for (auto child : stmt->children)
-            child->Traverse(*this, THREEADDRESS);
+            child->Traverse(this, THREEADDRESS);
         switch (stmt->type)
         {
         case STMT_IF:
@@ -90,10 +104,25 @@ void Visitor::GenThreeAddress(BaseAST *ast)
             break;
         case STMT_ASSIGN:
             std::vector<Address> addresses;
-            stmt->children[0]->Traverse(*this, THREEADDRESS);
-            addresses.emplace_back(Address(THREE_EXPR, tmpAddress));
-            stmt->children[1]->Traverse(*this, THREEADDRESS);
-            addresses.emplace_back(Address(THREE_EXPR, tmpAddress));
+            stmt->children[0]->Traverse(this, THREEADDRESS);
+            addresses.emplace_back(Address(THREE_VARIABLE, tmpAddress));
+            stmt->children[1]->Traverse(this, THREEADDRESS);
+
+            ThreeAddressType pointerType;
+            if (stmt->children[1]->TypeName() == typeid(VariableAST).name())
+            {
+                pointerType = THREE_VARIABLE;
+            }
+            else if(stmt->children[1]->TypeName() == typeid(LiteralAST).name())
+            {
+                pointerType = THREE_LITERAL;
+            }
+            else if(stmt->children[1]->TypeName() == typeid(ExprAST).name())
+            {
+                pointerType = THREE_ADDRESS;
+            }
+
+            addresses.emplace_back(Address(pointerType, tmpAddress));
 
             std::shared_ptr<ThreeAddress> code = std::make_shared<ThreeAddress>(THREE_OP_ASSIGN, addresses);
             threeAddressCode->codes.emplace_back(code);
@@ -106,29 +135,87 @@ void Visitor::GenThreeAddress(BaseAST *ast)
     {
         ExprAST *expr = (ExprAST *)ast;
         std::vector<Address> addresses;
-        expr->LHS->Traverse(*this, THREEADDRESS);
-        addresses.emplace_back(Address(THREE_EXPR, tmpAddress));
+        expr->LHS->Traverse(this, THREEADDRESS);
+        //std::cout << expr->LHS->TypeName() << std::endl;
+        ThreeAddressType pointerType;
+        if (expr->LHS->TypeName() == typeid(VariableAST).name())
+        {
+            pointerType = THREE_VARIABLE;
+        }
+        else if(expr->LHS->TypeName() == typeid(LiteralAST).name())
+        {
+            pointerType = THREE_LITERAL;
+        }
+        else if(expr->LHS->TypeName() == typeid(ExprAST).name())
+        {
+            pointerType = THREE_ADDRESS;
+        }
+        addresses.emplace_back(Address(pointerType, tmpAddress));
         if (expr->RHS)
         {
-            expr->RHS->Traverse(*this, THREEADDRESS);
-            addresses.emplace_back(Address(THREE_EXPR, tmpAddress));
+            expr->RHS->Traverse(this, THREEADDRESS);
+            if (expr->RHS->TypeName() == typeid(VariableAST).name())
+            {
+                pointerType = THREE_VARIABLE;
+            }
+            else if(expr->RHS->TypeName() == typeid(LiteralAST).name())
+            {
+                pointerType = THREE_LITERAL;
+            }
+            else if(expr->RHS->TypeName() == typeid(ExprAST).name())
+            {
+                pointerType = THREE_ADDRESS;
+            }
+            addresses.emplace_back(Address(pointerType, tmpAddress));
         }
         std::shared_ptr<ThreeAddress> code = std::make_shared<ThreeAddress>(strOp2ThreeAddressOp[expr->op], addresses);
         threeAddressCode->codes.emplace_back(code);
-        tmpAddress = expr;
+        tmpAddress = code->selfAddress;
     }
 }
 
 void ThreeAddress::Show()
 {
-    std::cout << ThreeAddressOp2Str[op] << ' ';
+    std::cout << selfAddress << ", " << ThreeAddressOp2Str[op] << ", ";
     if(op == THREE_OP_FUNC_DEF)
     {
         std::cout << ((FunctionAST*)addresses[0].address)->name;
     }
+    else if(op == THREE_OP_VAR_DEF)
+    {
+        std::cout << ((VariableAST*)addresses[0].address)->name << ", ";
+        if(addresses[1].type == THREE_LITERAL)
+            std::cout << ((LiteralAST*)addresses[1].address)->val;
+        else
+            std::cout << addresses[1].address;
+    }
+    else if(op == THREE_OP_VAR_DECL)
+    {
+        std::cout << ((VariableAST*)addresses[0].address)->name << ", " << addresses[0].address;
+    }
     else if(op == THREE_OP_ASSIGN)
     {
-        std::cout << ((VariableAST*)addresses[0].address)->name;
+        std::cout << ((VariableAST*)addresses[0].address)->name << "(" << addresses[0].address << "), ";
+        if(addresses[1].type == THREE_VARIABLE)
+            std::cout << ((VariableAST*)addresses[1].address)->name;
+        else if(addresses[1].type == THREE_LITERAL)
+            std::cout << ((LiteralAST*)addresses[1].address)->val;
+        else
+            std::cout << addresses[1].address;
+    }
+    else if(op == THREE_OP_MUL || op == THREE_OP_DIV || op == THREE_OP_ADD || op == THREE_OP_MINUS)
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            if(addresses[i].type == THREE_VARIABLE)
+                std::cout << ((VariableAST*)addresses[i].address)->name << "(" << addresses[i].address << ")";
+            else if(addresses[i].type == THREE_LITERAL)
+                std::cout << ((LiteralAST*)addresses[i].address)->val;
+            else
+                std::cout << addresses[i].address;
+            if(i == 0)
+                std::cout << ", ";
+        }
     }
     std::cout<<std::endl;
 }

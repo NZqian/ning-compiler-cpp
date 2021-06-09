@@ -27,11 +27,20 @@ std::map<ThreeAddressOp, std::string> ThreeAddressOp2Str
     {THREE_OP_GT, "greater than"},
     {THREE_OP_FUNC_CALL, "func call"},
     {THREE_OP_FUNC_DEF, "func def"},
+    {THREE_OP_VAR_DEF, "var def"},
+    {THREE_OP_VAR_DECL, "var decl"},
+    {THREE_OP_ADD, "expr +"},
+    {THREE_OP_MINUS, "expr -"},
+    {THREE_OP_MUL, "expr *"},
+    {THREE_OP_DIV, "expr /"},
+    {THREE_OP_MOD, "expr %"},
+    {THREE_OP_AND, "expr &&"},
+    {THREE_OP_OR, "expr ||"},
 };
 
 std::map<std::string, ThreeAddressOp> strOp2ThreeAddressOp
 {
-    {"+", THREE_OP_PLUS},
+    {"+", THREE_OP_ADD},
     {"-", THREE_OP_MINUS},
     {"*", THREE_OP_MUL},
     {"/", THREE_OP_DIV},
