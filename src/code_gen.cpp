@@ -35,7 +35,6 @@ void CodeGener::GenCode()
 {
     GenWelcome();
     fileWriter << "\t.global main\n";
-    fileWriter << "\t.data\n";
 
     for (auto code : codes->codes)
     {
@@ -68,6 +67,7 @@ void CodeGener::GenCode()
         if (status == GENER_GLOBAL_VAR && (code->op == THREE_OP_VAR_DEF || code->op == THREE_OP_VAR_DECL))
         {
             VariableAST *var = (VariableAST *)code->addresses[0].address;
+            fileWriter << "\t.data\n";
             fileWriter << var->name << ":\n";
             if (var->val)
             {
@@ -89,7 +89,6 @@ void CodeGener::GenCode()
             fileWriter << "\t.text\n";
             fileWriter << "." << var->name << "_addr:\n";
             fileWriter << "\t.word\t" << var->name << "\n";
-            fileWriter << "\t.text\n";
         }
         else if (status == GENER_FUNC)
         {

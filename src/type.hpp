@@ -77,11 +77,12 @@ enum ThreeAddressOp
 
 enum ThreeAddressType
 {
-    THREE_ADDRESS,
+    THREE_TMP_VAR,
     THREE_VARIABLE,
     THREE_LITERAL,
     THREE_FUNCTION,
     THREE_EXPR,
+    THREE_LABEL
 };
 
 /*

@@ -2,6 +2,7 @@
 #include "AST.hpp"
 #include "global.hpp"
 #include "type.hpp"
+#include "symtable.hpp"
 
 class ThreeAddress;
 

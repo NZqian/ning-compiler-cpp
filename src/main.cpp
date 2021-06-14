@@ -62,7 +62,7 @@ int main(int argc, char **argv)
     std::shared_ptr<ProgAST> root = parser->Parse();
 #if TYPECHECK
     Visitor *visitor = new Visitor();
-    root->Traverse(visitor, ANALYZE);   //type check and construct symtable
+    //root->Traverse(visitor, ANALYZE);   //type check and construct symtable
     root->Traverse(visitor, SHOW);
 #if THREECODE
     root->Traverse(visitor, THREEADDRESS);
