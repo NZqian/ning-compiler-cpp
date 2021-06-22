@@ -13,14 +13,17 @@ class CodeGener
 {
     std::string outputFilename;
     std::shared_ptr<ThreeAddressCode> codes;
+	int codePos;
+    std::shared_ptr<SymTable> symtable;
     std::fstream fileWriter;
-    CodeGenerStatus status;
-    std::map<void *, std::string> address2registers;
+    std::map<std::string, std::string> address2registers;
     std::set<std::string> usedRegisters;
 
-    std::string GetRegister(void *address);
+    std::string GetRegister(const std::string &var);
     void GenWelcome();
+	void GenGlobalVar();
+	void GenFunction();
 public:
-    CodeGener(const std::string &outputFilename, std::shared_ptr<ThreeAddressCode> codes);
+    CodeGener(const std::string &outputFilename, std::shared_ptr<ThreeAddressCode> codes, std::shared_ptr<SymTable> symtable);
     void GenCode();
 };

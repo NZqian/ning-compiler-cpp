@@ -10,6 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/build/ning",   // 将要进行调试的程序的路径
             //"args": ["${workspaceFolder}/test_sample/functional_test/38_if_complex_expr.sy"],
+            //"args": ["${workspaceFolder}/rename.sy"],
             "args": ["${workspaceFolder}/sysyruntimelibrary/section1/functional_test/03_var_defn2.sy"],
             //"args": ["${workspaceFolder}/test_sample/functional_test/40_index_complex_expr.sy"],
             "stopAtEntry": false,                        // 设为true时程序将暂停在程序入口处

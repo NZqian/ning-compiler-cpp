@@ -1,49 +1,35 @@
 #include "symtable.hpp"
 
+Definition::Definition(const Definition &def)
+{
+    this->type = def.type;
+    this->pointer = def.pointer;
+}
+
+Definition::Definition()
+{
+    this->type = DEFINIT;
+    this->pointer = nullptr;
+}
+
+/*
 SymTable::SymTable()
 {
-    tables = nullptr;
 }
-
-void SymTable::AddTable()
-{
-    std::shared_ptr<Table> newTable = std::make_shared<Table>();
-    //if(tables)
-        newTable->prevTable = tables;
-    //else
-        //newTable->prevTable = nullptr;
-    tables = newTable;
-}
-
-void SymTable::DeleteTable()
-{
-    tables = tables->prevTable;
-}
+*/
 
 bool SymTable::Insert(BaseAST *definition, const std::string &name, DefinitionType type)
 {
-    for(auto curDefinition : tables->definitions)
-    {
-        if(curDefinition.name == name)
-            return false;
-    }
-    tables->definitions.emplace_back(Definition(name, type, definition));
+    if(SearchTable(name))
+        return false;
+    Definition def(type, definition);
+    definitions[name] = def;
     return true;
 }
 
-BaseAST *SymTable::SearchTable(const std::string &name, DefinitionType type)
+BaseAST *SymTable::SearchTable(const std::string &name)
 {
-    std::shared_ptr<Table> table = tables;
-    while(table)
-    {
-        for(auto definition : table->definitions)
-        {
-            if(definition.name == name && definition.type == type)
-            {
-                return definition.pointer;
-            }
-        }
-        table = table->prevTable;
-    }
-    return nullptr;
+    if(definitions.find(name) == definitions.end())
+        return nullptr;
+    return definitions[name].pointer;
 }

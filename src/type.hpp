@@ -4,7 +4,8 @@
 enum DefinitionType
 {
     FUNCTION,
-    VARIABLE
+    VARIABLE,
+    DEFINIT
 };
 
 enum BType
@@ -56,16 +57,20 @@ enum Stmt_type
 
 enum ThreeAddressOp
 {
+	THREE_OP_LABEL,
     THREE_OP_ASSIGN,
     THREE_OP_ADD,
     THREE_OP_MINUS,
     THREE_OP_MUL,
     THREE_OP_DIV,
     THREE_OP_MOD,
+    THREE_OP_CMP,
     THREE_OP_GT,
     THREE_OP_GE,
     THREE_OP_LT,
     THREE_OP_LE,
+    THREE_OP_EQ,
+    THREE_OP_NE,
     THREE_OP_NOT,
     THREE_OP_AND,
     THREE_OP_OR,
@@ -73,6 +78,15 @@ enum ThreeAddressOp
     THREE_OP_FUNC_DEF,
     THREE_OP_VAR_DEF,
     THREE_OP_VAR_DECL,
+    THREE_OP_RETURN,
+    THREE_OP_JUMP,
+    THREE_OP_JUMP_GT,
+    THREE_OP_JUMP_GE,
+    THREE_OP_JUMP_LT,
+    THREE_OP_JUMP_LE,
+    THREE_OP_JUMP_EQ,
+    THREE_OP_JUMP_NE,
+
 };
 
 enum ThreeAddressType
@@ -82,7 +96,7 @@ enum ThreeAddressType
     THREE_LITERAL,
     THREE_FUNCTION,
     THREE_EXPR,
-    THREE_LABEL
+    THREE_LABEL,
 };
 
 /*
@@ -98,6 +112,8 @@ enum AddressType
 extern std::map<Stmt_type, std::string> Stmt_type2str;
 extern std::map<BType, std::string> BType2Str;
 extern std::map<ThreeAddressOp, std::string> ThreeAddressOp2Str;
+extern std::map<ThreeAddressOp, ThreeAddressOp> ExprOp2JumpOp;
+extern std::map<ThreeAddressOp, ThreeAddressOp> ExprOp2JumpOpReversed;
 extern std::map<ThreeAddressType, std::string> ThreeAddressType2Str;
 extern std::map<std::string, ThreeAddressOp> strOp2ThreeAddressOp;
 

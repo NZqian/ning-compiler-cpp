@@ -1,115 +1,93 @@
 #include "code_gen.hpp"
 
-CodeGener::CodeGener(const std::string &outputFilename, std::shared_ptr<ThreeAddressCode> codes)
-    : outputFilename(outputFilename), codes(codes)
+CodeGener::CodeGener(const std::string &outputFilename, std::shared_ptr<ThreeAddressCode> codes, std::shared_ptr<SymTable> symtable)
+    : outputFilename(outputFilename), codes(codes), symtable(symtable)
 {
     fileWriter = std::fstream(outputFilename, std::fstream::out);
-    status = GENER_GLOBAL_VAR;
+    codePos = 0;
 }
 
-std::string CodeGener::GetRegister(void *address)
+std::string CodeGener::GetRegister(const std::string &var)
 {
     //存在地址->寄存器对应关系
-    if(address2registers.find(address) != address2registers.end())
+    if (address2registers.find(var) != address2registers.end())
     {
-        return address2registers[address];
+        return address2registers[var];
     }
     else
     {
         std::string registerName;
-        for(int i = 7; i < 11; i++)
+        for (int i = 7; i < 11; i++)
         {
             //unused register
             registerName = "R" + std::to_string(i);
-            if(usedRegisters.count(registerName) == 0)
+            if (usedRegisters.count(registerName) == 0)
             {
                 usedRegisters.insert(registerName);
-                address2registers[address] = registerName;
+                address2registers[var] = registerName;
                 return registerName;
             }
         }
     }
 }
 
+void CodeGener::GenGlobalVar()
+{
+    std::shared_ptr<ThreeAddress> code;
+    for (;; codePos++)
+    {
+        code = codes->codes[codePos];
+        if (code->op != THREE_OP_VAR_DEF || code->op != THREE_OP_VAR_DECL)
+        {
+            break;
+        }
+        VariableAST *var = (VariableAST *)symtable->SearchTable(code->addresses[0].address);
+        fileWriter << "\t.data\n";
+        fileWriter << var->name << ":\n";
+        if (var->val)
+        {
+            //array
+            if (var->dimensions.size())
+            {
+            }
+            else
+            {
+                if (code->addresses[1].type == THREE_LITERAL)
+                    fileWriter << "\t.word\t" << ((LiteralAST *)symtable->SearchTable(code->addresses[1].address))->val << "\n";
+            }
+        }
+        else
+        {
+            fileWriter << "\t.word\t0\t"
+                       << "\n";
+        }
+        fileWriter << "\t.text\n";
+        fileWriter << "." << var->name << "_addr:\n";
+        fileWriter << "\t.word\t" << var->name << "\n";
+    }
+}
+
+void CodeGener::GenFunction()
+{
+    std::shared_ptr<ThreeAddress> code;
+    fileWriter << "\n\t.text\n";
+    FunctionAST *func = (FunctionAST *)symtable->SearchTable(code->addresses[0].address);
+    fileWriter << func->name << ":\n";
+    fileWriter << "\tpush\t{fp, lr}\n";
+    fileWriter << "\tadd\t\tfp, sp, #0\n";
+    fileWriter << "\tsub\t\tsp, fp, #0\n";
+    fileWriter << "\tpop\t\t{fp, pc}\n";
+    fileWriter << "\t.ltorg\n";
+}
+
 void CodeGener::GenCode()
 {
     GenWelcome();
     fileWriter << "\t.global main\n";
-
-    for (auto code : codes->codes)
+    GenGlobalVar();
+    while(codePos < codes->codes.size())
     {
-        if (code->op == THREE_OP_FUNC_DEF)
-        {
-            //get in status FUNC
-            if (status != GENER_FUNC)
-            {
-                status = GENER_FUNC;
-                fileWriter << "\n\t.text\n";
-                FunctionAST *func = (FunctionAST *)code->addresses[0].address;
-                fileWriter << func->name << ":\n";
-                fileWriter << "\tpush\t{fp, lr}\n";
-                fileWriter << "\tadd\t\tfp, sp, #0\n";
-                fileWriter << "\tsub\t\tsp, fp, #0\n";
-            }
-            else
-            {
-                fileWriter << "\tpop\t\t{fp, pc}\n";
-                fileWriter << "\t.ltorg\n";
-                fileWriter << "\n\t.text\n";
-                FunctionAST *func = (FunctionAST *)code->addresses[0].address;
-                fileWriter << func->name << ":\n";
-                fileWriter << "\tpush\t{fp, lr}\n";
-                fileWriter << "\tadd\t\tfp, sp, #0\n";
-                fileWriter << "\tsub\t\tsp, fp, #0\n";
-            }
-            //another func def
-        }
-        if (status == GENER_GLOBAL_VAR && (code->op == THREE_OP_VAR_DEF || code->op == THREE_OP_VAR_DECL))
-        {
-            VariableAST *var = (VariableAST *)code->addresses[0].address;
-            fileWriter << "\t.data\n";
-            fileWriter << var->name << ":\n";
-            if (var->val)
-            {
-                //array
-                if (var->dimensions.size())
-                {
-                }
-                else
-                {
-                    if (code->addresses[1].type == THREE_LITERAL)
-                        fileWriter << "\t.word\t" << ((LiteralAST *)(code->addresses[1].address))->val << "\n";
-                }
-            }
-            else
-            {
-                fileWriter << "\t.word\t0\t"
-                           << "\n";
-            }
-            fileWriter << "\t.text\n";
-            fileWriter << "." << var->name << "_addr:\n";
-            fileWriter << "\t.word\t" << var->name << "\n";
-        }
-        else if (status == GENER_FUNC)
-        {
-            switch (code->op)
-            {
-            case THREE_OP_ASSIGN:
-                std::string left, right;
-                left = GetRegister(code->addresses[0].address);
-                if(code->addresses[1].type == THREE_LITERAL)
-                    right = "#" + std::to_string(((LiteralAST*)(code->addresses[1].address))->val);
-                else
-                    right = address2registers[code->addresses[1].address];
-                fileWriter << "\tmov\t\t" << left << ", " << right << "\n";
-                break;
-            }
-        }
-    }
-    if (status == GENER_FUNC)
-    {
-        fileWriter << "\tpop\t\t{fp, pc}\n";
-        fileWriter << "\t.ltorg\n";
+        GenFunction();
     }
 }
 

@@ -1,0 +1,22 @@
+int a, b;
+int fuck(int a, int b)
+{
+    a = 3;
+    b = 4;
+    {
+        int a, b;
+        a = 5;
+        b = 6;
+    }
+    a=3;
+    b=4;
+    e=5;
+}
+/*
+int main()
+{
+    int a, b;
+    a = 3;
+    //int c, d, e, f, g, h, i, j, k, l, m, n, o, p, q;
+    //int r, s, t, u, v, w, z, y;
+}*/

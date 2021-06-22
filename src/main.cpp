@@ -9,7 +9,7 @@
 #define PARSER true
 #define TYPECHECK true
 #define THREECODE true
-#define CODEGEN true
+#define CODEGEN false
 
 
 std::string filename;
@@ -55,14 +55,14 @@ int main(int argc, char **argv)
         tok = lexer->GetTok();
         lexer->PrintToken(tok);
     } while (tok != TOK_EOF);
-#endif
+#else
 
 #if PARSER
     std::shared_ptr<Parser> parser = std::make_shared<Parser>(filename);
     std::shared_ptr<ProgAST> root = parser->Parse();
 #if TYPECHECK
     Visitor *visitor = new Visitor();
-    //root->Traverse(visitor, ANALYZE);   //type check and construct symtable
+    root->Traverse(visitor, ANALYZE);   //type check and construct symtable
     root->Traverse(visitor, SHOW);
 #if THREECODE
     root->Traverse(visitor, THREEADDRESS);
@@ -73,10 +73,11 @@ int main(int argc, char **argv)
     {
 
     }
-    std::shared_ptr<CodeGener> codeGener = std::make_shared<CodeGener>(outputFilename, codes);
+    std::shared_ptr<CodeGener> codeGener = std::make_shared<CodeGener>(outputFilename, codes, visitor->symtable);
     codeGener->GenCode();
 #endif  //codegen
 #endif  //threecode
 #endif  //typecheck
 #endif  //parser
+#endif  //lexeronly
 }

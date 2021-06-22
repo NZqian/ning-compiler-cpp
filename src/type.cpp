@@ -24,6 +24,7 @@ std::map<Stmt_type, std::string> Stmt_type2str
 std::map<ThreeAddressOp, std::string> ThreeAddressOp2Str
 {
     {THREE_OP_ASSIGN, "assign"},
+    {THREE_OP_CMP, "compare"},
     {THREE_OP_GT, "greater than"},
     {THREE_OP_FUNC_CALL, "func call"},
     {THREE_OP_FUNC_DEF, "func def"},
@@ -36,6 +37,35 @@ std::map<ThreeAddressOp, std::string> ThreeAddressOp2Str
     {THREE_OP_MOD, "expr %"},
     {THREE_OP_AND, "expr &&"},
     {THREE_OP_OR, "expr ||"},
+    {THREE_OP_RETURN, "return"},
+    {THREE_OP_JUMP, "jump"},
+    {THREE_OP_JUMP_GT, "jump gt"},
+    {THREE_OP_JUMP_GE, "jump ge"},
+    {THREE_OP_JUMP_LT, "jump lt"},
+    {THREE_OP_JUMP_LE, "jump le"},
+    {THREE_OP_JUMP_EQ, "jump eq"},
+    {THREE_OP_JUMP_NE, "jump ne"},
+	{THREE_OP_LABEL, "label"}
+};
+
+std::map<ThreeAddressOp, ThreeAddressOp> ExprOp2JumpOp
+{
+    {THREE_OP_GT, THREE_OP_JUMP_GT},
+    {THREE_OP_GE, THREE_OP_JUMP_GE},
+    {THREE_OP_LT, THREE_OP_JUMP_LT},
+    {THREE_OP_LE, THREE_OP_JUMP_LE},
+    {THREE_OP_EQ, THREE_OP_JUMP_EQ},
+    {THREE_OP_NE, THREE_OP_JUMP_NE},
+};
+
+std::map<ThreeAddressOp, ThreeAddressOp> ExprOp2JumpOpReversed
+{
+    {THREE_OP_GT, THREE_OP_JUMP_LE},
+    {THREE_OP_GE, THREE_OP_JUMP_LT},
+    {THREE_OP_LT, THREE_OP_JUMP_GE},
+    {THREE_OP_LE, THREE_OP_JUMP_GT},
+    {THREE_OP_EQ, THREE_OP_JUMP_NE},
+    {THREE_OP_NE, THREE_OP_JUMP_EQ},
 };
 
 std::map<std::string, ThreeAddressOp> strOp2ThreeAddressOp
@@ -51,4 +81,6 @@ std::map<std::string, ThreeAddressOp> strOp2ThreeAddressOp
     {"<=", THREE_OP_LE},
     {"&&", THREE_OP_AND},
     {"||", THREE_OP_OR},
+    {"==", THREE_OP_EQ},
+    {"!=", THREE_OP_NE},
 };

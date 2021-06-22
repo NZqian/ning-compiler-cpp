@@ -49,7 +49,7 @@ std::shared_ptr<ProgAST> Parser::Parse()
         {
             children.emplace_back(std::move(definition));
         }
-        if (curToken == TOK_EOF)
+        if (curToken == TOK_EOF || curIdentifier == "}")
             break;
     }
     std::shared_ptr<ProgAST> root = std::make_shared<ProgAST>(std::move(children));
@@ -341,7 +341,9 @@ std::shared_ptr<StmtAST> Parser::ParseWhile()
     GetNextToken(); //eat while
     std::shared_ptr<BaseAST> child;
     std::vector<std::shared_ptr<BaseAST>> children;
+    GetNextToken(); //eat (
     std::shared_ptr<BaseAST> cond = ParseLOrExpr();
+    GetNextToken(); //eat )
     if (!cond)
         return nullptr;
     children.emplace_back(cond);

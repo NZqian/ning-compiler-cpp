@@ -4,6 +4,7 @@
 
 class BaseAST;
 class SymTable;
+class NameChanger;
 class ThreeAddress;
 class ThreeAddressCode;
 
@@ -12,13 +13,17 @@ class Visitor
     std::string indent;
     std::shared_ptr<SymTable> symtable;
     std::shared_ptr<ThreeAddress> curCode;
-    void *tmpAddress;
+    std::shared_ptr<NameChanger> nameChanger;
+    std::string tmpLabel;
+    bool inLoop;
+    std::vector<std::string> label[2];   
 
 public:
     std::shared_ptr<ThreeAddressCode> threeAddressCode;
     Visitor();
     void Show(BaseAST *ast);
     void Analyze(BaseAST *ast);
+    std::string GetNewVarName();
     void GenThreeAddress(BaseAST *ast);
 };
 
