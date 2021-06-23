@@ -1,6 +1,6 @@
 #include "AST.hpp"
-#include "symtable.hpp"
-#include "three_address.hpp"
+#include "../frontend/symtable.hpp"
+#include "../IR/three_address.hpp"
 
 Visitor::Visitor()
 {

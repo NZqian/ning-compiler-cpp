@@ -1,5 +1,5 @@
-#include "AST.hpp"
-#include "type.hpp"
+#include "../global/AST.hpp"
+#include "../global/type.hpp"
 #include "symtable.hpp"
 
 void Visitor::Show(BaseAST *ast)
@@ -255,6 +255,7 @@ void Visitor::Analyze(BaseAST *ast)
         StmtAST *stmt = (StmtAST *)ast;
         Stmt_type type = stmt->type;
         bool inLoopChangFlag = false;
+
         if(type == STMT_WHILE)
         {
             if(!inLoop)
@@ -273,10 +274,21 @@ void Visitor::Analyze(BaseAST *ast)
             child->Traverse(this, ANALYZE);
         }
         //改变了状态时退出while设false，即从一层while进入另一层while不设false
-		if(type == STMT_WHILE && inLoopChangFlag)
-		{
+        if(type == STMT_WHILE && inLoopChangFlag)
+        {
             inLoop = false;
-		}
+        }
+
+        if (type == STMT_ASSIGN)
+        {
+            std::string varName = ((VariableAST*)stmt->children[0].get())->name;
+            VariableAST *varDef = (VariableAST*)symtable->SearchTable(varName);
+            if (varDef->isConst)
+            {
+                fprintf(stderr, "cannot assign const var %s\n", varName.c_str());
+                exit(-1);
+            }
+        }
     }
     else if (typeid(*ast) == typeid(ExprAST))
     {

@@ -29,6 +29,7 @@ std::map<ThreeAddressOp, std::string> ThreeAddressOp2Str
     {THREE_OP_FUNC_CALL, "func call"},
     {THREE_OP_FUNC_DEF, "func def"},
     {THREE_OP_VAR_DEF, "var def"},
+    {THREE_OP_CONST_VAR_DEF, "const var def"},
     {THREE_OP_VAR_DECL, "var decl"},
     {THREE_OP_ADD, "expr +"},
     {THREE_OP_MINUS, "expr -"},
@@ -45,7 +46,8 @@ std::map<ThreeAddressOp, std::string> ThreeAddressOp2Str
     {THREE_OP_JUMP_LE, "jump le"},
     {THREE_OP_JUMP_EQ, "jump eq"},
     {THREE_OP_JUMP_NE, "jump ne"},
-	{THREE_OP_LABEL, "label"}
+	{THREE_OP_LABEL, "label"},
+	{THREE_OP_TO_REMOVE, "deleted"},
 };
 
 std::map<ThreeAddressOp, ThreeAddressOp> ExprOp2JumpOp

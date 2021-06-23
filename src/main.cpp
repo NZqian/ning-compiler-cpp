@@ -1,15 +1,17 @@
-#include "global.hpp"
-#include "lexer.hpp"
-#include "type.hpp"
-#include "parser.hpp"
-#include "three_address.hpp"
-#include "code_gen.hpp"
+#include "global/global.hpp"
+#include "global/type.hpp"
+#include "frontend/lexer.hpp"
+#include "frontend/parser.hpp"
+#include "IR/three_address.hpp"
+#include "backend/code_gen.hpp"
+#include "backend/baseblock.hpp"
+#include "backend/optimize.hpp"
 
 #define LEXER_ONLY false
 #define PARSER true
 #define TYPECHECK true
 #define THREECODE true
-#define CODEGEN false
+#define CODEGEN true
 
 
 std::string filename;
@@ -68,10 +70,22 @@ int main(int argc, char **argv)
     root->Traverse(visitor, THREEADDRESS);
     std::shared_ptr<ThreeAddressCode> codes = visitor->threeAddressCode;
     codes->Show();
+    visitor->symtable->Show();
 #if CODEGEN
     if(useOptimizr)
     {
-
+        /*
+        std::shared_ptr<FlowGraph> flowGraph = std::make_shared<FlowGraph>(codes);
+        flowGraph->Show();
+        */
+        std::shared_ptr<Optimizer> optimizer = std::make_shared<Optimizer>(codes, visitor->symtable);
+        optimizer->RemoveConstVar();
+        optimizer->ShowCode();
+        optimizer->WeakenExpr();
+        optimizer->RemoveTmpVar();
+        optimizer->UpdateSymTable();
+        optimizer->ShowCode();
+        visitor->symtable->Show();
     }
     std::shared_ptr<CodeGener> codeGener = std::make_shared<CodeGener>(outputFilename, codes, visitor->symtable);
     codeGener->GenCode();

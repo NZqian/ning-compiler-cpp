@@ -1,6 +1,6 @@
 #pragma once
-#include "global.hpp"
-#include "three_address.hpp"
+#include "../global/global.hpp"
+#include "../IR/three_address.hpp"
 
 enum CodeGenerStatus
 {

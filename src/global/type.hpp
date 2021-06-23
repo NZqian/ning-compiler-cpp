@@ -1,11 +1,12 @@
 #pragma once
-#include "global.hpp"
+#include "../global/global.hpp"
 
 enum DefinitionType
 {
     FUNCTION,
     VARIABLE,
-    DEFINIT
+	TMPVAR,
+    DEFINIT,
 };
 
 enum BType
@@ -77,6 +78,7 @@ enum ThreeAddressOp
     THREE_OP_FUNC_CALL,
     THREE_OP_FUNC_DEF,
     THREE_OP_VAR_DEF,
+	THREE_OP_CONST_VAR_DEF,
     THREE_OP_VAR_DECL,
     THREE_OP_RETURN,
     THREE_OP_JUMP,
@@ -86,7 +88,7 @@ enum ThreeAddressOp
     THREE_OP_JUMP_LE,
     THREE_OP_JUMP_EQ,
     THREE_OP_JUMP_NE,
-
+	THREE_OP_TO_REMOVE,
 };
 
 enum ThreeAddressType

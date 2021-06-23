@@ -1,7 +1,7 @@
 #pragma once
-#include "global.hpp"
+#include "../global/global.hpp"
+#include "../global/AST.hpp"
 #include "lexer.hpp"
-#include "AST.hpp"
 
 class Parser
 {

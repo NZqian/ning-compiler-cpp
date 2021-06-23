@@ -1,13 +1,14 @@
 #pragma once
 
-#include "global.hpp"
-#include "AST.hpp"
+#include "../global/global.hpp"
+#include "../global/AST.hpp"
 
 class Definition
 {
     public:
     DefinitionType type;
     BaseAST* pointer;
+    std::vector<std::string> storePlace;
     Definition(DefinitionType type, BaseAST *pointer) : type(type), pointer(pointer){}
     Definition(const Definition &def);
     Definition();
@@ -18,7 +19,13 @@ class SymTable
     public:
     std::map<std::string, Definition> definitions;
     bool Insert(BaseAST *, const std::string &name, DefinitionType type);
+    bool Delete(const std::string &name);
+    //get ast pointer
     BaseAST *SearchTable(const std::string &name);
+    Definition *SearchTableDefinition(const std::string &name);
+    bool InsertVarSavePos(const std::string &varName, const std::string &pos);
+    bool DeleteVarSavePos(const std::string &varName, const std::string &pos);
+    void Show();
     //Table();
 };
 

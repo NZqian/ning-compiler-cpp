@@ -1,8 +1,8 @@
 #pragma once
-#include "AST.hpp"
-#include "global.hpp"
-#include "type.hpp"
-#include "symtable.hpp"
+#include "../global/AST.hpp"
+#include "../global/global.hpp"
+#include "../global/type.hpp"
+#include "../frontend/symtable.hpp"
 
 class ThreeAddress;
 
@@ -20,10 +20,10 @@ class ThreeAddress
 {
 public:
     ThreeAddressOp op;
-    std::vector<Address> addresses;
+    std::vector<std::shared_ptr<Address>> addresses;
 
     std::string label;
-    ThreeAddress(ThreeAddressOp op, std::vector<Address> addresses);
+    ThreeAddress(ThreeAddressOp op, std::vector<std::shared_ptr<Address>> addresses);
     void Show();
     static std::string GenLabel();
     static std::string GenCodeLabel();
@@ -40,9 +40,4 @@ public:
     std::vector<std::shared_ptr<ThreeAddress>> codes;
     ThreeAddressCode();
     void Show();
-};
-
-class BaseBlock
-{
-
 };

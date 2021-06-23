@@ -1,6 +1,6 @@
 #pragma once
-#include "global.hpp"
-#include "type.hpp"
+#include "../global/global.hpp"
+#include "../global/type.hpp"
 
 class BaseAST;
 class SymTable;
@@ -11,7 +11,6 @@ class ThreeAddressCode;
 class Visitor
 {
     std::string indent;
-    std::shared_ptr<SymTable> symtable;
     std::shared_ptr<ThreeAddress> curCode;
     std::shared_ptr<NameChanger> nameChanger;
     std::string tmpLabel;
@@ -19,6 +18,7 @@ class Visitor
     std::vector<std::string> label[2];   
 
 public:
+    std::shared_ptr<SymTable> symtable;
     std::shared_ptr<ThreeAddressCode> threeAddressCode;
     Visitor();
     void Show(BaseAST *ast);

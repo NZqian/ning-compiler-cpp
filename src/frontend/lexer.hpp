@@ -1,6 +1,6 @@
 #pragma once
-#include "global.hpp"
-#include "type.hpp"
+#include "../global/global.hpp"
+#include "../global/type.hpp"
 
 
 class FileReader
