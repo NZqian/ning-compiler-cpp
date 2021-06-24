@@ -5,18 +5,23 @@
 
 class Definition
 {
-    public:
+public:
     DefinitionType type;
-    BaseAST* pointer;
-    std::vector<std::string> storePlace;
-    Definition(DefinitionType type, BaseAST *pointer) : type(type), pointer(pointer){}
+    BaseAST *pointer;
+    std::vector<std::string> storePlaces;
+    int useCount;
+    Definition(DefinitionType type, BaseAST *pointer)
+        : type(type), pointer(pointer)
+    {
+        useCount = 0;
+    }
     Definition(const Definition &def);
     Definition();
 };
 
 class SymTable
 {
-    public:
+public:
     std::map<std::string, Definition> definitions;
     bool Insert(BaseAST *, const std::string &name, DefinitionType type);
     bool Delete(const std::string &name);
@@ -31,10 +36,12 @@ class SymTable
 
 class NameChanger
 {
-    std::vector<std::vector<std::pair<std::string, std::string> > > namescope;
+    std::vector<std::vector<std::pair<std::string, std::string>>> namescope;
+    std::map<std::string, std::string> funcNameMap;
     std::string curNewName;
-    public:
-    NameChanger() : curNewName("a"){}
+
+public:
+    NameChanger() : curNewName("a") {}
     void EnterNameScope();
     void ExitNameScope();
     std::string GetNewVarName(std::shared_ptr<SymTable> symtable);
@@ -42,4 +49,6 @@ class NameChanger
     std::string UseChange(std::string curName);
     bool InNameScope(std::string curName);
     bool InCurNameScope(std::string curName);
+    std::string GetNewFuncName(std::shared_ptr<SymTable> symtable, std::string curName);
+    std::string ReplaceFuncName(std::string curName);
 };

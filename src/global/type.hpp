@@ -58,8 +58,10 @@ enum Stmt_type
 
 enum ThreeAddressOp
 {
+    THREE_OP_PARAM,
 	THREE_OP_LABEL,
     THREE_OP_ASSIGN,
+    THREE_OP_ASSIGN_SHIFT,
     THREE_OP_ADD,
     THREE_OP_MINUS,
     THREE_OP_MUL,
@@ -75,6 +77,7 @@ enum ThreeAddressOp
     THREE_OP_NOT,
     THREE_OP_AND,
     THREE_OP_OR,
+    THREE_OP_PUSH_STACK,
     THREE_OP_FUNC_CALL,
     THREE_OP_FUNC_DEF,
     THREE_OP_VAR_DEF,
@@ -99,6 +102,7 @@ enum ThreeAddressType
     THREE_FUNCTION,
     THREE_EXPR,
     THREE_LABEL,
+    THREE_SHIFT,
 };
 
 /*

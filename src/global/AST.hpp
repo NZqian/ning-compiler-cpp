@@ -146,14 +146,14 @@ class FunctionAST : public BaseAST
 public:
     BType returnType;
     std::string name;
-    std::vector<std::shared_ptr<VariableAST>> parameters;
+    std::vector<std::shared_ptr<BaseAST>> parameters;
     std::shared_ptr<BlockAST> body;
 
     FunctionAST(BType returnType, const std::string &name,
-                std::vector<std::shared_ptr<VariableAST>> parameters, std::shared_ptr<BlockAST> body)
+                std::vector<std::shared_ptr<BaseAST>> parameters, std::shared_ptr<BlockAST> body)
         : returnType(returnType), name(name), parameters(std::move(parameters)), body(std::move(body)) {}
     FunctionAST(BType returnType, const std::string &name,
-                std::vector<std::shared_ptr<VariableAST>> parameters)
+                std::vector<std::shared_ptr<BaseAST>> parameters)
         : returnType(returnType), name(name), parameters(std::move(parameters))
     {
         body = nullptr;

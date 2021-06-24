@@ -64,24 +64,27 @@ int main(int argc, char **argv)
     std::shared_ptr<ProgAST> root = parser->Parse();
 #if TYPECHECK
     Visitor *visitor = new Visitor();
-    root->Traverse(visitor, ANALYZE);   //type check and construct symtable
     root->Traverse(visitor, SHOW);
+    root->Traverse(visitor, ANALYZE);   //type check and construct symtable
 #if THREECODE
     root->Traverse(visitor, THREEADDRESS);
     std::shared_ptr<ThreeAddressCode> codes = visitor->threeAddressCode;
     codes->Show();
-    visitor->symtable->Show();
+    //visitor->symtable->Show();
 #if CODEGEN
     if(useOptimizr)
     {
         /*
-        std::shared_ptr<FlowGraph> flowGraph = std::make_shared<FlowGraph>(codes);
+        std::shared_ptr<FlowGraph> flowGraph = std::make_shared<FlowGraph>();
+        flowGraph->ConstrctGraph(codes);
         flowGraph->Show();
         */
         std::shared_ptr<Optimizer> optimizer = std::make_shared<Optimizer>(codes, visitor->symtable);
+        //optimizer->
         optimizer->RemoveConstVar();
-        optimizer->ShowCode();
+        //optimizer->ShowCode();
         optimizer->WeakenExpr();
+        //optimizer->ShowCode();
         optimizer->RemoveTmpVar();
         optimizer->UpdateSymTable();
         optimizer->ShowCode();

@@ -8,6 +8,7 @@
 #include <ostream>
 #include <set>
 #include <algorithm>
+#include <limits>
 
 enum State
 {

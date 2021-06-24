@@ -204,21 +204,24 @@ void FlowGraph::LinkBlock()
         //普通语句，可以转移到下一个指令
         else
         {
-            //无全局变量或全局变量已被处理
-            /*
-            if (!(in->out.size() && i == 0))
-            i == 0 && 
-            */
-            if(i == 0 && in->out.size())
+            if (startCode->op != THREE_OP_FUNC_DEF)
             {
-
-            }
-            else
-            {
-                if(i + 1 < blocks.size())
+                //无全局变量或全局变量已被处理
+                /*
+                if (!(in->out.size() && i == 0))
+                i == 0 && 
+                */
+                if(i == 0 && in->out.size())
                 {
-                    block->out.push_back(blocks[i+1]);
-                    blocks[i+1]->in.push_back(block);
+
+                }
+                else
+                {
+                    if(i + 1 < blocks.size())
+                    {
+                        block->out.push_back(blocks[i+1]);
+                        blocks[i+1]->in.push_back(block);
+                    }
                 }
             }
         }

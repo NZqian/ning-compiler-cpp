@@ -9,6 +9,24 @@ bool IsTmpVar(const std::string &varName)
     return false;
 }
 
+int Is2n(int val)
+{
+    int n = 0;
+    while (val > 1)
+    {
+        if (val % 2 != 0)
+        {
+            return false;
+        }
+        else
+        {
+            val >>= 1;
+            n += 1;
+        }
+    }
+    return n;
+}
+
 Optimizer::Optimizer(std::shared_ptr<ThreeAddressCode> code,
                      std::shared_ptr<SymTable> symtable)
     : curCode(code), symtable(symtable)
@@ -76,6 +94,12 @@ void Optimizer::WeakenExpr(int start, int end)
             case 2:
                 curCode->codes[i] = std::make_shared<ThreeAddress>(THREE_OP_ADD, std::vector<std::shared_ptr<Address>>{std::make_shared<Address>(THREE_TMP_VAR, addresses[0]->address), std::make_shared<Address>(addresses[1]->type, addresses[1]->address), std::make_shared<Address>(addresses[1]->type, addresses[1]->address)});
                 break;
+            default:
+            {
+                if(Is2n(val))
+                    curCode->codes[i] = std::make_shared<ThreeAddress>(THREE_OP_ASSIGN_SHIFT, std::vector<std::shared_ptr<Address>>{std::make_shared<Address>(THREE_TMP_VAR, addresses[0]->address), std::make_shared<Address>(addresses[1]->type, addresses[1]->address), std::make_shared<Address>(THREE_SHIFT, "ASL #" + std::to_string(val))});
+            }
+            break;
             }
         }
         break;
@@ -88,14 +112,25 @@ void Optimizer::WeakenExpr(int start, int end)
                 curCode->codes[i] = std::make_shared<ThreeAddress>(THREE_OP_ASSIGN, std::vector<std::shared_ptr<Address>>{std::make_shared<Address>(THREE_TMP_VAR, addresses[0]->address), std::make_shared<Address>(THREE_LITERAL, "#0")});
             }
             //0 / a = 0
-            else if (std::atoi(addresses[1]->address.c_str()) == 0)
+            else if (addresses[1]->address[0] == '#' &&
+                     std::atoi(std::string(addresses[1]->address.begin() + 1, addresses[1]->address.end()).c_str()) == 0)
             {
                 curCode->codes[i] = std::make_shared<ThreeAddress>(THREE_OP_ASSIGN, std::vector<std::shared_ptr<Address>>{std::make_shared<Address>(THREE_TMP_VAR, addresses[0]->address), std::make_shared<Address>(THREE_LITERAL, "#0")});
             }
             //a / 1 = a
-            else if (std::atoi(addresses[2]->address.c_str()) == 1)
+            else if (addresses[2]->address[0] == '#' &&
+                     std::atoi(std::string(addresses[2]->address.begin() + 1, addresses[2]->address.end()).c_str()) == 1)
             {
                 curCode->codes[i] = std::make_shared<ThreeAddress>(THREE_OP_ASSIGN, std::vector<std::shared_ptr<Address>>{std::make_shared<Address>(THREE_TMP_VAR, addresses[0]->address), std::make_shared<Address>(addresses[1]->type, addresses[1]->address)});
+            }
+            //2的指数
+            else if (addresses[2]->address[0] == '#' &&
+                     Is2n(std::atoi(std::string(addresses[2]->address.begin() + 1, addresses[2]->address.end()).c_str())))
+            {
+                curCode->codes[i] = std::make_shared<ThreeAddress>(THREE_OP_ASSIGN_SHIFT, std::vector<std::shared_ptr<Address>>{
+                                                                                              std::make_shared<Address>(THREE_TMP_VAR, addresses[0]->address),
+                                                                                              std::make_shared<Address>(addresses[1]->type, addresses[1]->address),
+                                                                                              std::make_shared<Address>(THREE_SHIFT, "ASR #" + std::to_string(Is2n(std::atoi(std::string(addresses[2]->address.begin() + 1, addresses[2]->address.end()).c_str()))))});
             }
         }
         break;
@@ -191,21 +226,27 @@ void Optimizer::RemoveTmpVar(int start, int end)
     for (int i = start; i < end; i++)
     {
         std::shared_ptr<ThreeAddress> code = curCode->codes[i];
-        //赋值语句中的左值为临时变量且未被使用
-        if (code->op == THREE_OP_ASSIGN && IsTmpVar(code->addresses[1]->address) && tmpVarUseCnt[code->addresses[1]->address] == 0)
+        //return的addresses可能为空，不能运行到下面
+        if (code->op == THREE_OP_RETURN)
         {
-            std::string tmpVarName = code->addresses[1]->address;
-            std::string replaceVarName = code->addresses[0]->address;
-            for (int j = i - 1; j >= start; j--)
+            continue;
+        }
+        //赋值语句中的左值为临时变量且未被使用
+        if (IsTmpVar(code->addresses[0]->address) && tmpVarUseCnt[code->addresses[0]->address] == 0)
+        {
+            std::string tmpVarName = code->addresses[0]->address;
+            //std::string replaceVarName = code->addresses[0]->address;
+            for (int j = i + 1; j < end; j++)
             {
-                std::shared_ptr<ThreeAddress> prevCode = curCode->codes[j];
-                if (prevCode->addresses.size() && prevCode->addresses[0]->address == tmpVarName)
+                std::shared_ptr<ThreeAddress> afterCode = curCode->codes[j];
+                if (afterCode->addresses.size() > 1 && afterCode->addresses[1]->address == tmpVarName)
                 {
-                    prevCode->addresses[0]->address = replaceVarName;
+                    code->addresses[0]->address = afterCode->addresses[0]->address;
+                    //afterCode->addresses[0]->address = replaceVarName;
+                    afterCode->op = THREE_OP_TO_REMOVE;
                     break;
                 }
             }
-            code->op = THREE_OP_TO_REMOVE;
         }
     }
     RemoveDeletedThreeAddressCode();

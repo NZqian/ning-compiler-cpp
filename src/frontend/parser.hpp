@@ -29,8 +29,8 @@ class Parser
     std::shared_ptr<BaseAST> ParseVariableInitVal();
     std::shared_ptr<VariableAST> ParseLValue();
     std::shared_ptr<VariableAST> ParseParam();
-    std::vector<std::shared_ptr<VariableAST>> ParseDefParam();
-    std::vector<std::shared_ptr<VariableAST>> ParseCallParam();
+    std::vector<std::shared_ptr<BaseAST>> ParseDefParam();
+    std::vector<std::shared_ptr<BaseAST>> ParseCallParam();
     std::shared_ptr<BaseAST> ParseBody();
     std::shared_ptr<BaseAST> ParseDecl();
     std::shared_ptr<BaseAST> ParseSimple();

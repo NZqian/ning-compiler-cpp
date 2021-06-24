@@ -162,6 +162,28 @@ bool NameChanger::InCurNameScope(std::string curName)
     return false;
 }
 
+std::string NameChanger::GetNewFuncName(std::shared_ptr<SymTable> symtable, std::string curName)
+{
+    std::string newName = curName + "_" + GetNewVarName(symtable);
+    funcNameMap[curName] = newName;
+    return newName;
+}
+
+std::string NameChanger::ReplaceFuncName(std::string curName)
+{
+    auto iter = funcNameMap.find(curName);
+    //没找到，不改名
+    if (iter == funcNameMap.end())
+    {
+        /*
+        fprintf(stderr, "new func name not found\n");
+        exit(-1);
+        */
+        return curName;
+    }
+    return funcNameMap[curName];
+}
+
 void Visitor::Analyze(BaseAST *ast)
 {
     if (typeid(*ast) == typeid(ProgAST))
@@ -192,7 +214,7 @@ void Visitor::Analyze(BaseAST *ast)
         //变量定义
         if(var->type == INT)
         {
-            //已经在符号表中。两种情况：嵌套作用域中的同名变量，同作用域中的重复定义。
+            //已经在符号表中。三种情况：与函数重名，嵌套作用域中的同名变量，同作用域中的重复定义。
             if(!symtable->Insert(var, var->name, VARIABLE))
             {
                 //已经在名字替换向量中，为重复定义
@@ -220,6 +242,7 @@ void Visitor::Analyze(BaseAST *ast)
             if(!symtable->SearchTable(var->name))
             {
                 fprintf(stderr, "use before definition! %s\n", var->name.c_str());
+                exit(0);
             }
         }
     }
@@ -230,24 +253,38 @@ void Visitor::Analyze(BaseAST *ast)
         nameChanger->EnterNameScope();
         for (auto param : func->parameters)
             param->Traverse(this, ANALYZE);
-        if (func->body)
-            func->body->Traverse(this, ANALYZE);
         //函数定义
         if(func->returnType != NONE)
         {
             if(!symtable->Insert(func, func->name, FUNCTION))
             {
-                fprintf(stderr, "redifinition! %s\n", func->name.c_str());
+                //和函数重名，即重复定义
+                if(symtable->SearchTableDefinition(func->name)->type == FUNCTION)
+                {
+                    fprintf(stderr, "redifinition! %s\n", func->name.c_str());
+                    exit(-1);
+                }
+                //和变量重名
+                else
+                {
+                    func->name = nameChanger->GetNewFuncName(symtable, func->name);
+                    symtable->Insert(func, func->name, FUNCTION);
+                }
             }
         }
         //函数调用
         else
         {
-            if(!symtable->SearchTable(func->name))
+            func->name = nameChanger->ReplaceFuncName(func->name);
+            Definition *searchResult = symtable->SearchTableDefinition(func->name);
+            if(!searchResult || searchResult->type != FUNCTION)
             {
                 fprintf(stderr, "use before definition! %s\n", func->name.c_str());
+                exit(-1);
             }
         }
+        if (func->body)
+            func->body->Traverse(this, ANALYZE);
         nameChanger->ExitNameScope();
     }
     else if (typeid(*ast) == typeid(StmtAST))

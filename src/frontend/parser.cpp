@@ -131,7 +131,7 @@ std::vector<std::shared_ptr<BaseAST>> Parser::ParseDefinition()
 
 std::shared_ptr<FunctionAST> Parser::ParseFunction(BType returnType, const std::string &name)
 {
-    std::vector<std::shared_ptr<VariableAST>> parameters = ParseDefParam();
+    std::vector<std::shared_ptr<BaseAST>> parameters = ParseDefParam();
     if (curIdentifier == "{")
     {
         std::shared_ptr<BlockAST> body = ParseBlock();
@@ -421,10 +421,10 @@ std::shared_ptr<VariableAST> Parser::ParseParam()
     return std::make_shared<VariableAST>(type, name, isConst, false, dimensions);
 }
 
-std::vector<std::shared_ptr<VariableAST>> Parser::ParseDefParam()
+std::vector<std::shared_ptr<BaseAST>> Parser::ParseDefParam()
 {
-    std::vector<std::shared_ptr<VariableAST>> parameters;
-    std::shared_ptr<VariableAST> parameter;
+    std::vector<std::shared_ptr<BaseAST>> parameters;
+    std::shared_ptr<BaseAST> parameter;
     GetNextToken(); //eat (
     while (curIdentifier != "{")
     {
@@ -534,21 +534,33 @@ std::shared_ptr<FunctionAST> Parser::ParseFunctionCall()
     std::string name;
     name = curIdentifier;
     GetNextToken(); //eat name;
-    std::vector<std::shared_ptr<VariableAST>> params = ParseCallParam();
+    std::vector<std::shared_ptr<BaseAST>> params = ParseCallParam();
     std::shared_ptr<FunctionAST> funcCall = std::make_shared<FunctionAST>(BType::NONE, name, params);
     return funcCall;
 }
 
-std::vector<std::shared_ptr<VariableAST>> Parser::ParseCallParam()
+std::vector<std::shared_ptr<BaseAST>> Parser::ParseCallParam()
 {
-    std::vector<std::shared_ptr<VariableAST>> params;
-    std::shared_ptr<VariableAST> param;
+    std::vector<std::shared_ptr<BaseAST>> params;
+    std::shared_ptr<BaseAST> param;
     GetNextToken(); //eat (
     while (curIdentifier != ")")
     {
-        std::string name = curIdentifier;
-        GetNextToken(); //eat name
-        param = std::make_shared<VariableAST>(BType::NONE, name, false, false);
+        param = ParseExpr();
+        /*
+        if (curToken == TOK_NUMBER)
+        {
+            int val = curNumVal;
+            GetNextToken(); //eat val
+            param = std::make_shared<LiteralAST>(val);
+        }
+        else
+        {
+            std::string name = curIdentifier;
+            GetNextToken(); //eat name
+            param = std::make_shared<VariableAST>(BType::NONE, name, false, false);
+        }
+        */
         params.emplace_back(param);
         if (curIdentifier == ",")
             GetNextToken(); //eat ,

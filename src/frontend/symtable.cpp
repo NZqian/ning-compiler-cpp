@@ -2,12 +2,14 @@
 
 Definition::Definition(const Definition &def)
 {
+    this->useCount = 0;
     this->type = def.type;
     this->pointer = def.pointer;
 }
 
 Definition::Definition()
 {
+    this->useCount = 0;
     this->type = DEFINIT;
     this->pointer = nullptr;
 }
@@ -60,7 +62,7 @@ bool SymTable::InsertVarSavePos(const std::string &varName, const std::string &p
     {
         return false;
     }
-    definition->storePlace.push_back(pos);
+    definition->storePlaces.push_back(pos);
     return true;
 }
 
@@ -72,12 +74,12 @@ bool SymTable::DeleteVarSavePos(const std::string &varName, const std::string &p
     {
         return false;
     }
-    auto iter = std::find(definition->storePlace.begin(), definition->storePlace.end(), pos);
-    if (iter == definition->storePlace.end())
+    auto iter = std::find(definition->storePlaces.begin(), definition->storePlaces.end(), pos);
+    if (iter == definition->storePlaces.end())
     {
         return false;
     }
-    definition->storePlace.erase(iter);
+    definition->storePlaces.erase(iter);
     return true;
 }
 
