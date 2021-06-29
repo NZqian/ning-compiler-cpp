@@ -1,0 +1,12 @@
+int fuck2()
+{
+	return 1;
+}
+int fuck1()
+{
+	return fuck2();
+}
+int main()
+{
+	return fuck1();
+}

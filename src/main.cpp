@@ -66,6 +66,7 @@ int main(int argc, char **argv)
     Visitor *visitor = new Visitor();
     root->Traverse(visitor, SHOW);
     root->Traverse(visitor, ANALYZE);   //type check and construct symtable
+    root->Traverse(visitor, SHOW);
 #if THREECODE
     root->Traverse(visitor, THREEADDRESS);
     std::shared_ptr<ThreeAddressCode> codes = visitor->threeAddressCode;
@@ -82,10 +83,13 @@ int main(int argc, char **argv)
         std::shared_ptr<Optimizer> optimizer = std::make_shared<Optimizer>(codes, visitor->symtable);
         //optimizer->
         optimizer->RemoveConstVar();
-        //optimizer->ShowCode();
+        std::cout << "removed const val" << std::endl;
+        optimizer->ShowCode();
         optimizer->WeakenExpr();
-        //optimizer->ShowCode();
+        std::cout << "weaken expr" << std::endl;
+        optimizer->ShowCode();
         optimizer->RemoveTmpVar();
+        std::cout << "removed tmp var" << std::endl;
         optimizer->UpdateSymTable();
         optimizer->ShowCode();
         visitor->symtable->Show();

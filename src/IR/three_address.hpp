@@ -12,7 +12,9 @@ class Address
 public:
     ThreeAddressType type;
     std::string address;
+    BaseAST *pointer;
     Address(ThreeAddressType type, std::string address);
+    Address(ThreeAddressType type, BaseAST *pointer);
 };
 
 //一条三地址码

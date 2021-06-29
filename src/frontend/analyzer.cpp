@@ -6,13 +6,10 @@ void Visitor::Show(BaseAST *ast)
 {
     if (typeid(*ast) == typeid(ProgAST))
     {
-        indent += "  ";
         ProgAST *prog = (ProgAST *)ast;
         std::cout << indent << typeid(*ast).name() << " " << std::endl;
         for (auto child : prog->children)
             child->Traverse(this, SHOW);
-        indent.pop_back();
-        indent.pop_back();
     }
     else if (typeid(*ast) == typeid(BlockAST))
     {
@@ -42,8 +39,32 @@ void Visitor::Show(BaseAST *ast)
             std::cout << "const" << std::endl;
         else
             std::cout << std::endl;
+        if (var->dimensions.size())
+        {
+            std::cout << indent << "dimensions: \n";
+            for (int i = 0; i < var->dimensions.size(); i++)
+            {
+                var->dimensions[i]->Traverse(this, SHOW);
+                //std::cout << var->dimensions[i]->GetVal() << ", ";
+            }
+        }
         if(var->val)
+        {
+            std::cout << indent << "vals: \n";
             var->val->Traverse(this, SHOW);
+        }
+        indent.pop_back();
+        indent.pop_back();
+    }
+    else if (typeid(*ast) == typeid(ArrayAST))
+    {
+        indent += "  ";
+        ArrayAST *arr = (ArrayAST *)ast;
+        std::cout << indent << "array: \n";
+        for (auto item : arr->items)
+        {
+            item->Traverse(this, SHOW);
+        }
         indent.pop_back();
         indent.pop_back();
     }
@@ -80,7 +101,7 @@ void Visitor::Show(BaseAST *ast)
     {
         indent += "  ";
         ExprAST *expr = (ExprAST *)ast;
-        std::cout << indent << typeid(*expr).name() << " op " << expr->op << " " << expr->is_literal << std::endl;
+        std::cout << indent << typeid(*expr).name() << " op " << expr->op << " " << expr->is_literal << " " << expr->val << std::endl;
         expr->LHS->Traverse(this, SHOW);
         if (expr->RHS)
             expr->RHS->Traverse(this, SHOW);
@@ -209,7 +230,14 @@ void Visitor::Analyze(BaseAST *ast)
     else if (typeid(*ast) == typeid(VariableAST))
     {
         VariableAST *var = (VariableAST *)ast;
-        if(var->val)
+        if (var->dimensions.size())
+        {
+            for (auto dimension : var->dimensions)
+            {
+                dimension->Traverse(this, ANALYZE);
+            }
+        }
+        if (var->val)
             var->val->Traverse(this, ANALYZE);
         //变量定义
         if(var->type == INT)
@@ -231,6 +259,22 @@ void Visitor::Analyze(BaseAST *ast)
                     symtable->Insert(var, var->name, VARIABLE);
                 }
             }
+            //数组
+            if (var->dimensions.size() && var->val)
+            {
+                //有初值
+                if (var->val)
+                {
+                    var->ReconstructArr();
+                }
+                //初始化为0
+                else
+                {
+                    std::shared_ptr<ArrayAST> arr = std::dynamic_pointer_cast<ArrayAST>(var->val);
+                    arr->items.clear();
+                    FillArray(arr, var->dimensions, 0);
+                }
+            }
         }
         //变量使用
         else if(var->type == NONE)
@@ -243,6 +287,11 @@ void Visitor::Analyze(BaseAST *ast)
             {
                 fprintf(stderr, "use before definition! %s\n", var->name.c_str());
                 exit(0);
+            }
+            if (((VariableAST*)symtable->SearchTable(var->name))->isConst)
+            {
+                var->isConst = true;
+                var->val = std::make_shared<LiteralAST>(symtable->SearchTable(var->name)->GetVal());
             }
         }
     }
@@ -334,12 +383,35 @@ void Visitor::Analyze(BaseAST *ast)
         if (expr->RHS)
             expr->RHS->Traverse(this, ANALYZE);
         
+        int lval, rval;
         if (expr->LHS->IsLiteral())
         {
+            lval = expr->LHS->GetVal();
             if(expr->RHS)
             {
+                rval = expr->RHS->GetVal();
                 if(expr->RHS->IsLiteral())
                 {
+                    if(expr->op == "+")
+                    {
+                        expr->val = lval + rval;
+                    }
+                    if(expr->op == "-")
+                    {
+                        expr->val = lval - rval;
+                    }
+                    if(expr->op == "*")
+                    {
+                        expr->val = lval * rval;
+                    }
+                    if(expr->op == "/")
+                    {
+                        expr->val = lval / rval;
+                    }
+                    if(expr->op == "%")
+                    {
+                        expr->val = lval % rval;
+                    }
                     expr->is_literal = true;
                 }
                 else
@@ -350,6 +422,7 @@ void Visitor::Analyze(BaseAST *ast)
             else
             {
                 expr->is_literal = true;
+                expr->val = lval;
             }
         }
         else

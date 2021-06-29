@@ -15,7 +15,7 @@ class Visitor
     std::shared_ptr<NameChanger> nameChanger;
     std::string tmpLabel;
     bool inLoop;
-    std::vector<std::string> label[2];   
+    std::vector<std::string> label[2];
 
 public:
     std::shared_ptr<SymTable> symtable;
@@ -58,6 +58,11 @@ public:
     virtual bool IsLiteral()
     {
         return false;
+    }
+
+    virtual int GetVal()
+    {
+        return INT8_MAX;
     }
 
     virtual std::string TypeName()
@@ -116,10 +121,38 @@ public:
     {
         return typeid(*this).name();
     }
+
+    int GetVal()
+    {
+        return val;
+    }
+};
+
+class ArrayAST : public BaseAST
+{
+public:
+    std::vector<std::shared_ptr<BaseAST>> items;
+
+    ArrayAST()
+    {
+    }
+
+    std::string TypeName()
+    {
+        return typeid(*this).name();
+    }
+
 };
 
 class VariableAST : public BaseAST
 {
+    std::vector<int> index;
+    //static void TraverseArray(std::shared_ptr<BaseAST> arr, std::shared_ptr<BaseAST> &newVal, int depth, std::vector<int> dimensions);
+    void TraverseArray(std::shared_ptr<BaseAST> arr, std::shared_ptr<BaseAST> &newVal, int depth, std::vector<int> dimensions);
+    void UpdateIndex(int depth);
+    void GetNextIndexBlock(int depth);
+    void GetNextIndex();
+    void FillEmpty(std::shared_ptr<BaseAST> &arr, int depth);
 public:
     BType type;
     std::string name;
@@ -139,6 +172,17 @@ public:
     {
         return typeid(*this).name();
     }
+
+    int GetVal()
+    {
+        if (isConst && dimensions.size() == 0)
+        {
+            return val->GetVal();
+        }
+        return INT8_MAX;
+    }
+
+    void ReconstructArr();
 };
 
 class FunctionAST : public BaseAST
@@ -191,4 +235,12 @@ public:
     {
         return typeid(*this).name();
     }
+
+    int GetVal()
+    {
+        return val;
+    }
 };
+
+void FillArray(std::shared_ptr<ArrayAST> &arr, std::vector<std::shared_ptr<BaseAST>> dimensions, int depth);
+void TraverseArray(std::shared_ptr<BaseAST> arr, int depth, std::vector<std::shared_ptr<BaseAST>> dimensions, std::shared_ptr<BaseAST> &newVal);

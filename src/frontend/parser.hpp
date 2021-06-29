@@ -26,7 +26,9 @@ class Parser
     std::shared_ptr<FunctionAST> ParseFunctionCall();
     std::shared_ptr<VariableAST> ParseVariable(BType type, const std::string &name, bool isConst, bool isGlobal);
     std::vector<std::shared_ptr<VariableAST>> ParseVariable();
-    std::shared_ptr<BaseAST> ParseVariableInitVal();
+    std::shared_ptr<BaseAST> ParseArrayInitVal();
+    //std::shared_ptr<BaseAST> ParseArrayInitVal(std::vector<std::shared_ptr<BaseAST>> dimensions);
+    //std::string ParseArrayInitVal();
     std::shared_ptr<VariableAST> ParseLValue();
     std::shared_ptr<VariableAST> ParseParam();
     std::vector<std::shared_ptr<BaseAST>> ParseDefParam();

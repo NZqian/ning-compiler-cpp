@@ -1,0 +1,13 @@
+int recursion(int n)
+{
+	if (n < 3)
+		return n;
+	return recursion(n-1);
+}
+
+int main()
+{
+	int a = 3;
+	a = recursion(10)
+	return a;
+}

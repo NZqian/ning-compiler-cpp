@@ -66,10 +66,12 @@ void Optimizer::WeakenExpr(int start, int end)
                 std::string valStr = std::string(var[2].begin()+1, var[2].end()));
                 */
 
-            std::string valStr = std::string(addresses[2]->address.begin() + 1, addresses[2]->address.end());
-            if (std::atoi(valStr.c_str()) == 0)
+            if (addresses[2]->type == THREE_LITERAL)
             {
-                curCode->codes[i] = std::make_shared<ThreeAddress>(THREE_OP_ASSIGN, std::vector<std::shared_ptr<Address>>{std::make_shared<Address>(THREE_TMP_VAR, addresses[0]->address), std::make_shared<Address>(addresses[1]->type, addresses[1]->address)});
+                std::string valStr = std::string(addresses[2]->address.begin() + 1, addresses[2]->address.end()); if (std::atoi(valStr.c_str()) == 0)
+                {
+                    curCode->codes[i] = std::make_shared<ThreeAddress>(THREE_OP_ASSIGN, std::vector<std::shared_ptr<Address>>{std::make_shared<Address>(THREE_TMP_VAR, addresses[0]->address), std::make_shared<Address>(addresses[1]->type, addresses[1]->address)});
+                }
             }
         }
         break;
@@ -160,10 +162,15 @@ void Optimizer::RemoveConstVar(int start, int end)
         std::shared_ptr<ThreeAddress> code = curCode->codes[i];
         if (code->op == THREE_OP_CONST_VAR_DEF)
         {
-            std::string constName = code->addresses[0]->address;
-            const2val[constName] = std::atoi(std::string(code->addresses[1]->address.begin() + 1, code->addresses[1]->address.end()).c_str());
-            constToRemove.push_back(constName);
-            code->op = THREE_OP_TO_REMOVE;
+            Definition *def = symtable->SearchTableDefinition(code->addresses[0]->address);
+            VariableAST *var = (VariableAST*)def->pointer;
+            if (var->dimensions.size())
+            {
+                std::string constName = code->addresses[0]->address;
+                const2val[constName] = std::atoi(std::string(code->addresses[1]->address.begin() + 1, code->addresses[1]->address.end()).c_str());
+                constToRemove.push_back(constName);
+                code->op = THREE_OP_TO_REMOVE;
+            }
         }
     }
     for (int i = start; i < end; i++)
@@ -176,6 +183,7 @@ void Optimizer::RemoveConstVar(int start, int end)
             auto iter = std::find(constToRemove.begin(), constToRemove.end(), curAddress);
             if (iter != constToRemove.end())
             {
+                address->type = THREE_LITERAL;
                 address->address = "#" + std::to_string(const2val[curAddress]);
             }
         }

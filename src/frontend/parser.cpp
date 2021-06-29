@@ -168,7 +168,14 @@ std::shared_ptr<VariableAST> Parser::ParseVariable(BType type, const std::string
     if (curIdentifier == "=")
     {
         GetNextToken(); //eat =
-        initVal = ParseVariableInitVal();
+        if (curIdentifier == "{")
+        {
+            initVal = ParseArrayInitVal();
+        }
+        else
+        {
+            initVal = ParseExpr();
+        }
     }
     std::shared_ptr<VariableAST> variable;
     if(initVal)
@@ -216,26 +223,48 @@ std::vector<std::shared_ptr<VariableAST> > Parser::ParseVariable()
     return variables;
 }
 
-std::shared_ptr<BaseAST> Parser::ParseVariableInitVal()
+std::shared_ptr<BaseAST> Parser::ParseArrayInitVal()
 {
-    std::shared_ptr<BaseAST> init = nullptr;
-    int depth = 0;
-    if (curIdentifier == "{")
+    std::shared_ptr<ArrayAST> array = std::make_shared<ArrayAST>();
+    std::shared_ptr<BaseAST> item;
+
+    //empty init val
+    if (curIdentifier == "}")
     {
-        while(true)
+        return array;
+    }
+    if (curIdentifier != "{")
+    {
+        if (curToken == TOK_NUMBER)
         {
-            if(curIdentifier == "{")
-                depth += 1;
-            else if(curIdentifier == "}")
-                depth -= 1;
+            item = std::make_shared<LiteralAST>(curNumVal);
+            GetNextToken(); //eat num
+        }
+        else
+        {
+            item = ParseLValue();
+        }
+        return item;
+    }
+    GetNextToken(); //eat {
+    while(true)
+    {
+        array->items.push_back(ParseArrayInitVal());
+        if (curIdentifier == ",")
+        {
             GetNextToken();
-            if(depth == 0)
-                break;
+        }
+        else if (curIdentifier == "}")
+        {
+            GetNextToken(); //eat }
+            break;
+        }
+        else if (curIdentifier == ";")
+        {
+            break;
         }
     }
-    else
-        init = ParseExpr();
-    return init;
+    return array;
 }
 
 std::shared_ptr<VariableAST> Parser::ParseLValue()

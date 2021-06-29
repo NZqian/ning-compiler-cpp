@@ -17,5 +17,14 @@ int fuck(int a, int b, int c, int d, int e, int f)
 
 int main()
 {
+	int z = 9;
+	int y = 8;
+	int x = 7;
+	int w = 6;
+	int v = 5;
+	int u = 4;
+	int t = 3;
+	int s = 2;
+	int r = 1;
 	return fuck(6, 5, 4, 3, 2, 1);
 }
