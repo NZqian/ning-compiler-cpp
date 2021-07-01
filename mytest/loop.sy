@@ -1,0 +1,11 @@
+int main()
+{
+	int i = 0;
+	int cnt = 0;
+	while (i < 10)
+	{
+		i = i + 1;
+		cnt = cnt + 1;
+	}
+	return cnt;
+}

@@ -149,7 +149,8 @@ void CodeGener::SpillAReg()
         for (auto var : reg->storedVars)
         {
             Definition* varDef = symtable->SearchTableDefinition(var);
-            curUseCnt += varDef->useCount;
+            if (varDef)
+                curUseCnt += varDef->useCount;
         }
         if (curUseCnt < minUseCnt)
         {
@@ -160,8 +161,10 @@ void CodeGener::SpillAReg()
     for (std::string var2remove : useLessReg->storedVars)
     {
         Definition* varDef = symtable->SearchTableDefinition(var2remove);
-        WriteStr(useLessReg->regName, varDef->storePlaces[0]);
+        if (varDef)
+            WriteStr(useLessReg->regName, varDef->storePlaces[0]);
     }
+    useLessReg->Clear();
 }
 
 bool IsLiteral(const std::string &str)
@@ -193,33 +196,60 @@ std::string CodeGener::GetRegister(const std::string &var, bool flag)
         return "r0";
     }
     
+    //常数或寄存器
     if (var[0] == '#' || (var[0] == 'r' && (var[1] >= '0' && var[1] <='9')))
     {
         return var;
     }
 
+    //是否已在某个寄存器中
     std::shared_ptr<Register> reg = FindRegByVar(var);
     if (reg)
     {
         return reg->regName;
     }
-    //当前变量不存在任何一个寄存器中，分配一个。
 
+    //当前变量不存在任何一个寄存器中，分配一个。
     std::string regName = AllocReg(var);
+    //分配成功
     if (regName != "")
     {
-        //非临时变量，先读取
-        //if (var[0] != '@')
+        int dollarPos = -1;
+        for (int i = 0; i < var.size(); i++)
+        {
+            if (var[i] == '$')
+            {
+                dollarPos = i;
+                break;
+            }
+        }
+        //非临时变量且非数组变量，先读取
+        if (var[0] != '~' && dollarPos == -1)
         {
             Definition *varDef = symtable->SearchTableDefinition(var);
             FindRegByName(regName)->InsertVar(var);
             if (varDef->storePlaces[0][0] == '.')
                 WriteLdr(regName, varDef->storePlaces[0]);
             else
-                WriteLdr(regName, "[" + std::string(varDef->storePlaces[0] + "]"));
+                WriteLdr(regName, std::string(varDef->storePlaces[0]));
         }
+        else
+        {
+            FindRegByName(regName)->InsertVar(var);
+        }
+
+        //数组变量，完成寄存器分配前读取
+        if (dollarPos != -1)
+        {
+            if (var[-1] == '!')
+                LoadArrayItemAddress(var, regName);
+            else
+                LoadArrayItem(var, regName);
+        }
+
         return regName;
     }
+    //分配失败
     else
     {
         //spill后递归一次
@@ -230,6 +260,81 @@ std::string CodeGener::GetRegister(const std::string &var, bool flag)
     return var;
 }
 
+std::vector<std::string> CodeGener::SplitArrayItem(const std::string &item)
+{
+    std::vector<std::string> itemSplit;
+    char * itemc = new char[strlen(item.c_str())+1];
+    strcpy(itemc, item.c_str());
+    char *tmpStr = strtok(itemc, "$");
+    while (tmpStr != NULL)
+    {
+        //std::cout << tmpStr << " ";
+        itemSplit.push_back(std::string(tmpStr));
+        tmpStr = strtok(NULL, "$");
+    }
+    //std::cout << std::endl;
+    return itemSplit;
+}
+
+void CodeGener::LoadArrayItem(const std::string &item, const std::string &regName)
+{
+    LoadArrayItemAddress(item, regName);
+    WriteLdr(regName, regName);
+}
+
+void CodeGener::LoadArrayItemAddress(const std::string &item, const std::string &regName)
+{
+    std::vector<std::string> itemSplit;
+    itemSplit = SplitArrayItem(item);
+    std::string varName = itemSplit[0];
+    std::vector<int> dimensions;
+    VariableAST *var = (VariableAST*)symtable->SearchTable(varName);
+    for (int i = 0; i < var->dimensions.size(); i++)
+    {
+        dimensions.push_back(var->dimensions[i]->GetVal());
+    }
+
+    std::string baseAddress;
+    std::string oriBaseAddress = symtable->SearchTableDefinition(varName)->storePlaces[0];
+    for(int i = 0; i < oriBaseAddress.size(); i++)
+    {
+        if (oriBaseAddress[i] == '#')
+        {
+            baseAddress = std::string(oriBaseAddress.begin() + i, oriBaseAddress.end());
+            break;
+        }
+    }
+    WriteAdd(regName, "sp", baseAddress);
+    std::string reg1 = GetRegister("~tmp1", 0);
+    std::string reg2 = GetRegister("~tmp2", 0);
+    std::string curDimension;
+    for (int i = 0; i < dimensions.size() - 1; i++)
+    {
+        WriteMov(reg1, "#" + std::to_string(dimensions[i]));
+        if (itemSplit[i + 1][0] >= '0' && itemSplit[i + 1][0] <= '9')
+        {
+            WriteMov(reg2, "#" + itemSplit[i + 1]);
+        }
+        else
+        {
+            WriteMov(reg2, GetRegister(itemSplit[i + 1], 0));
+        }
+        WriteMul(reg1, reg1, reg2);
+        WriteAdd(regName, regName, reg1);
+    }
+    //WriteMov(reg1, "#" + itemSplit.back());
+    std::string reg_4 = GetRegister("~tmp4", 0);
+    WriteMov(reg_4, "#4");
+    if (itemSplit[dimensions.size()][0] >= '0' && itemSplit[dimensions.size()][0] <= '9')
+    {
+        WriteMul(reg1, GetRegister("#" + itemSplit[dimensions.size()], 0), reg_4);
+    }
+    else
+    {
+        WriteMul(reg1, GetRegister(itemSplit[dimensions.size()], 0), reg_4);
+    }
+    WriteAdd(regName, regName, reg1);
+}
 //将寄存器中的值存到其他地方
 /*
 void CodeGener::EmptyRegister(const std::string &reg)
@@ -245,7 +350,7 @@ void CodeGener::GenGlobalVar()
     {
         code = codes->codes[codePos];
         //if (code->op != THREE_OP_VAR_DEF && code->op != THREE_OP_VAR_DECL && code->op != THREE_OP_CONST_VAR_DEF)
-        if (code->op != THREE_OP_VAR_DEF && code->op != THREE_OP_VAR_DECL && code->op != THREE_OP_CONST_VAR_DEF)
+        if (code->op != THREE_OP_VAR_DEF && code->op != THREE_OP_VAR_DECL && code->op != THREE_OP_CONST_VAR_DEF && code->op != THREE_OP_CONST_ARRAY_DEF)
         {
             break;
         }
@@ -257,6 +362,7 @@ void CodeGener::GenGlobalVar()
             //array
             if (var->dimensions.size())
             {
+                InitGlobalArray(var->val.get());
             }
             else
             {
@@ -287,12 +393,6 @@ void CodeGener::PushCallParam()
     {
         if (codes->codes[codePos]->op != THREE_OP_PUSH_STACK)
         {
-            /*
-            for (int j = i; j < registers->registers.size(); j++)
-            {
-                SpillReg(registers->registers[j]->regName);
-            }
-            */
             codePos--;
             return;
         }
@@ -325,24 +425,52 @@ void CodeGener::PushCallParam()
         WriteMov(regName, code->addresses[0]->address);
         WritePush(regName);
     }
-    /*
-    for (int j = 4; j < registers->registers.size(); j++)
-    {
-        SpillReg(registers->registers[j]->regName);
-    }
-    */
     codePos--;
 }
 
-void CodeGener::GenFunction()
+void CodeGener::InitGlobalArray(BaseAST *arr)
+{
+    if (arr->TypeName() == typeid(ArrayAST).name())
+    {
+        for (auto item : ((ArrayAST*)arr)->items)
+        {
+            InitGlobalArray(item.get());
+        }
+    }
+    else
+    {
+        fileWriter << "\t.word\t" << std::to_string(((LiteralAST*)arr)->val) << "\n";
+    }
+}
+
+void CodeGener::InitLocalArray(BaseAST *arr, int baseAddr)
+{
+    //一个数组可以包括：数组、常数、变量
+    if (arr->TypeName() == typeid(ArrayAST).name())
+    {
+        for (auto item : ((ArrayAST*)arr)->items)
+        {
+            InitLocalArray(item.get(), baseAddr);
+        }
+    }
+    else if (arr->TypeName() == typeid(LiteralAST).name())
+    {
+        WriteMov("r0", "#" + std::to_string(((LiteralAST*)arr)->val));
+        WriteStr("r0", "sp, #" + std::to_string(baseAddr + arrayShift * 4));
+        arrayShift ++;
+    }
+    else
+    {
+        WriteMov("r0", ((VariableAST*)arr)->name);
+        WriteStr("r0", "sp, #" + std::to_string(baseAddr + arrayShift * 4));
+        arrayShift ++;
+    }
+}
+
+void CodeGener::AllocLocalVariable(FunctionAST *func)
 {
     std::shared_ptr<ThreeAddress> code;
     code = codes->codes[codePos];
-    fileWriter << "\n\t.text\n";
-    FunctionAST *func = (FunctionAST *)symtable->SearchTable(code->addresses[0]->address);
-    fileWriter << func->name << ":\n";
-    codePos++;
-
     int paramNum = func->parameters.size();
     ClearRegs(paramNum);
 
@@ -392,7 +520,7 @@ void CodeGener::GenFunction()
         std::cout << var<< std::endl;
     }
 
-    std::string regs2push = "";
+    regs2push = "";
     int paramRegNum = paramVars.size() > 4 ? 4 : paramVars.size();
     //不论如何r0不能push，不然就没返回值了
     for (int i = std::max(paramRegNum, 1); i < registers.size(); i++)
@@ -411,7 +539,25 @@ void CodeGener::GenFunction()
     // 创建内存空间
     if (usedVars.size())
     {
-        WriteSub("sp", "sp", "#" + std::to_string(4 * (2 + usedVars.size())));
+        int varSpace = 0;
+        for (auto varName : usedVars)
+        {
+            VariableAST *var = (VariableAST*)symtable->SearchTable(varName);
+            if (var && var->dimensions.size())
+            {
+                int curSpace = 1;
+                for (auto dimension : var->dimensions)
+                {
+                    curSpace *= dimension->GetVal();
+                }
+                varSpace += curSpace;
+            }
+            else
+            {
+                varSpace ++;
+            }
+        }
+        WriteSub("sp", "sp", "#" + std::to_string(4 * (2 + varSpace)));
         int i = 0;
         for (auto var : usedVars)
         {
@@ -427,13 +573,38 @@ void CodeGener::GenFunction()
             if (pos == paramVars.size())
             {
                 Definition* varDef = symtable->SearchTableDefinition(var);
-                varDef->storePlaces.push_back("sp, #" + std::to_string(i * 4));
+                //是数组
+                if (varDef && varDef->type != TMPVAR && ((VariableAST*)varDef->pointer)->dimensions.size())
+                {
+                    std::string baseAddr = "sp, #" + std::to_string(i * 4);
+                    varDef->storePlaces.push_back(baseAddr);
+                    int varSpace = 1;
+                    for (auto dimension : ((VariableAST*)varDef->pointer)->dimensions)
+                    {
+                        varSpace *= dimension->GetVal();
+                    }
+                    arrayShift = 0;
+                    InitLocalArray(((VariableAST*)varDef->pointer)->val.get(), i * 4);
+                    i += varSpace;
+                    fileWriter << "@ " << var << " stored at " << baseAddr << ", size " << varSpace * 4 << std::endl;
+                }
+                else
+                {
+                    //生成的数组元素变量varName$index1$index2...，不生成地址
+                    if (varDef)
+                    {
+                        varDef->storePlaces.push_back("sp, #" + std::to_string(i * 4));
+                        fileWriter << "@ " << var << " stored at " << std::string("sp, #" + std::to_string(i * 4)) << std::endl;
+                        i++;
+                    }
+                }
             }
             //初值在寄存器中
             else if (pos < 4)
             {
                 Definition* varDef = symtable->SearchTableDefinition(var);
                 varDef->storePlaces.push_back("sp, #" + std::to_string(i * 4));
+                fileWriter << "@ " << var << " stored at " << std::string("sp, #" + std::to_string(i * 4)) << std::endl;
                 WriteStr("r" + std::to_string(pos), varDef->storePlaces[0]);
                 //清掉这个寄存器
                 SpillReg("r" + std::to_string(pos));
@@ -443,10 +614,22 @@ void CodeGener::GenFunction()
             {
                 Definition* varDef = symtable->SearchTableDefinition(var);
                 varDef->storePlaces.push_back("fp, #" + std::to_string((pos - 2) * 4));
+                fileWriter << "@ " << var << " stored at " << std::string("fp, #" + std::to_string((pos - 2) * 4)) << std::endl;
             }
-            i++;
         }
     }
+}
+
+void CodeGener::GenFunction()
+{
+    std::shared_ptr<ThreeAddress> code;
+    code = codes->codes[codePos];
+    fileWriter << "\n\t.text\n";
+    FunctionAST *func = (FunctionAST *)symtable->SearchTable(code->addresses[0]->address);
+    fileWriter << func->name << ":\n";
+    codePos++;
+
+    AllocLocalVariable(func);
 
     for(; codePos < codes->codes.size(); codePos++)
     {
@@ -522,7 +705,14 @@ void CodeGener::GenFunction()
                         flag = 1;
                     regName[i] = GetRegister(code->addresses[i]->address, flag);
                 } 
-                WriteMov(regName[0], regName[1]);
+                if (code->addresses[0]->address.back() == '!')
+                {
+                    WriteStr(regName[1], regName[0]);
+                }
+                else
+                {
+                    WriteMov(regName[0], regName[1]);
+                }
             }
             break;
             case THREE_OP_ASSIGN_SHIFT:
@@ -550,8 +740,9 @@ void CodeGener::GenFunction()
                 WriteMov(regName[0], regName[1]);
                 std::string varName = code->addresses[0]->address;
                 Definition *varDef = symtable->SearchTableDefinition(varName);
+                
                 WriteStr(regName[0], varDef->storePlaces[0]);
-                FindRegByName(regName[0])->Clear();
+                FindRegByName(regName[0])->InsertVar(varName);
             }
             break;
             case THREE_OP_LABEL:
@@ -606,8 +797,33 @@ void CodeGener::GenFunction()
             case THREE_OP_PUSH_STACK:
             {
                 PushCallParam();
+            }
+            break;
+            //varName, tmpVarName, index1, index2, ...
+            case THREE_OP_INDEX:
+            {
+                /*
+                std::vector<int> dimensions;
+                VariableAST *var = (VariableAST*)symtable->SearchTable(code->addresses[0]->address);
+                for (int i = 0; i < var->dimensions.size(); i++)
+                {
+                    dimensions.push_back(var->dimensions[i]->GetVal());
+                }
 
-                ///fileWriter << "\tpush\t" << GetRegister(code->addresses[0]->address) << std::endl;
+                std::string reg0 = GetRegister(code->addresses[1]->address, 1);
+                std::string reg1 = GetRegister("~tmp1", 0);
+                std::string reg2 = GetRegister("~tmp2", 0);
+
+                for (int i = 0; i < dimensions.size() - 1; i++)
+                {
+                    WriteMov(reg1, "#" + std::to_string(dimensions[i]));
+                    WriteMov(reg2, "#" + code->addresses[i + 2]->address);
+                    WriteMul(reg1, reg1, reg2);
+                    WriteAdd(reg0, reg0, reg1);
+                }
+                WriteMov(reg1, "#" + code->addresses.back()->address);
+                WriteAdd(reg0, reg0, reg1);
+                */
             }
             break;
             case THREE_OP_FUNC_CALL:
@@ -682,7 +898,7 @@ void CodeGener::WriteStr(const std::string &address1, const std::string &address
 
 void CodeGener::WriteLdr(const std::string &address1, const std::string &address2)
 {
-    fileWriter << "\tldr\t\t" << address1 << ", " << address2 << std::endl;
+    fileWriter << "\tldr\t\t" << address1 << ", [" << address2 << "]" << std::endl;
 }
 
 void CodeGener::WriteMov(const std::string &address1, const std::string &address2)

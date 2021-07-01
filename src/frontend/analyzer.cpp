@@ -238,7 +238,9 @@ void Visitor::Analyze(BaseAST *ast)
             }
         }
         if (var->val)
+        {
             var->val->Traverse(this, ANALYZE);
+        }
         //变量定义
         if(var->type == INT)
         {

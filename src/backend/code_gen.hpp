@@ -13,6 +13,7 @@ class Register
 {
 public:
     std::vector<std::string> storedVars;
+    std::vector<std::string> storedVarsBackup;
     std::string regName;
     Register(const std::string &regName)
     :regName(regName){}
@@ -32,6 +33,9 @@ class CodeGener
     std::map<std::string, std::string> address2registers;
     std::set<std::string> usedRegisters;
     std::vector<std::shared_ptr<Register>> registers;
+    std::string regs2push;
+
+    int arrayShift;
 
     void WriteOpOne(const std::string &address);
     void WriteOpTwo(const std::string &address);
@@ -50,6 +54,12 @@ class CodeGener
 
     void PushCallParam();
     void ProcessVarAddress();
+    void InitGlobalArray(BaseAST *arr);
+    void InitLocalArray(BaseAST *arr, int baseAddr);
+    void AllocLocalVariable(FunctionAST *func);
+    void LoadArrayItem(const std::string &item, const std::string &regName);
+    void LoadArrayItemAddress(const std::string &item, const std::string &regName);
+    std::vector<std::string> SplitArrayItem(const std::string &item);
 
     void GenWelcome();
     void GenGlobalVar();

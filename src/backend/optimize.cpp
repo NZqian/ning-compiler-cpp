@@ -164,7 +164,7 @@ void Optimizer::RemoveConstVar(int start, int end)
         {
             Definition *def = symtable->SearchTableDefinition(code->addresses[0]->address);
             VariableAST *var = (VariableAST*)def->pointer;
-            if (var->dimensions.size())
+            if (!var->dimensions.size())
             {
                 std::string constName = code->addresses[0]->address;
                 const2val[constName] = std::atoi(std::string(code->addresses[1]->address.begin() + 1, code->addresses[1]->address.end()).c_str());
@@ -286,6 +286,33 @@ void Optimizer::UpdateSymTable()
             if (address->type == THREE_TMP_VAR)
             {
                 symtable->Insert(nullptr, address->address, TMPVAR);
+            }
+        }
+    }
+}
+
+//等号左侧的数组元素加上标记，方便与等号右侧数组元素值区分
+void Optimizer::ProcessArrayItemName()
+{
+    for (auto code : curCode->codes)
+    {
+        if (code->op == THREE_OP_ASSIGN)
+        {
+            std::string leftAddress = code->addresses[0]->address;
+            int pos = -1;
+            for (int i = 0; i < leftAddress.size(); i++)
+            {
+                if (leftAddress[i] == '$')
+                {
+                    pos = i;
+                    break;
+                }
+            }
+            //是数组元素变量，在等号左侧
+            //维度不可能为符号，用!标记
+            if (pos != -1)
+            {
+                code->addresses[0]->address += "$!";
             }
         }
     }

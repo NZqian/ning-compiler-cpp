@@ -47,6 +47,7 @@ std::map<ThreeAddressOp, std::string> ThreeAddressOp2Str
     {THREE_OP_FUNC_DEF, "func def"},
     {THREE_OP_ARRAY_DEF, "array def"},
     {THREE_OP_CONST_ARRAY_DEF, "const array def"},
+    {THREE_OP_INDEX, "indexes"},
     {THREE_OP_VAR_DEF, "var def"},
     {THREE_OP_CONST_VAR_DEF, "const var def"},
     {THREE_OP_VAR_DECL, "var decl"},

@@ -9,6 +9,7 @@
 #include <set>
 #include <algorithm>
 #include <limits>
+#include <string.h>
 
 enum State
 {

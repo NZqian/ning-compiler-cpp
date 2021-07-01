@@ -38,6 +38,8 @@
 		"tuple": "cpp",
 		"typeinfo": "cpp",
 		"variant": "cpp",
-		"*.inc": "cpp"
-	}
+		"*.inc": "cpp",
+		"ranges": "cpp"
+	},
+	"cmake.configureOnOpen": false
 }

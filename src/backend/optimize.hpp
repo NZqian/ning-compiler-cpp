@@ -22,4 +22,5 @@ public:
     void RemoveDeadCode();
     void UpdateSymTable();
     void ShowCode();
+    void ProcessArrayItemName();
 };

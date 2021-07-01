@@ -91,6 +91,7 @@ int main(int argc, char **argv)
         optimizer->RemoveTmpVar();
         std::cout << "removed tmp var" << std::endl;
         optimizer->UpdateSymTable();
+        optimizer->ProcessArrayItemName();
         optimizer->ShowCode();
         visitor->symtable->Show();
     }

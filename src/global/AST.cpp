@@ -217,3 +217,29 @@ void VariableAST::ReconstructArr()
     val = newArr;
     FillEmpty(val, 0);
 }
+
+std::string VariableAST::GetName()
+{
+    //数组元素
+    if (dimensions.size() && !val)
+    {
+        std::string newName = name;
+        for (auto dimension : dimensions)
+        {
+            newName += "$";
+            if (dimension->TypeName() == typeid(LiteralAST).name())
+            {
+                newName += std::to_string(((LiteralAST*)dimension.get())->val);
+            }
+            else
+            {
+                newName += ((VariableAST*)dimension.get())->GetName();
+            }
+        }
+        return newName;
+    }
+    else
+    {
+        return name;
+    }
+}

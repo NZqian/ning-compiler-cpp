@@ -183,6 +183,7 @@ public:
     }
 
     void ReconstructArr();
+    std::string GetName();
 };
 
 class FunctionAST : public BaseAST
