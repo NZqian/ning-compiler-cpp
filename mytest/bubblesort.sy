@@ -17,6 +17,6 @@ int main()
 		}
 		i = i - 1;
 	}
-	//return a[0];
-	return i;
+	return a[5];
+	//return i;
 }

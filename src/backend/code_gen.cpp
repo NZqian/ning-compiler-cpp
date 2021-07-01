@@ -44,6 +44,7 @@ void Register::Clear()
 {
     if(storedVars.size())
         storedVars.clear();
+    LRU = 0;
 }
 
 //通过寄存器名获取到指针
@@ -79,7 +80,7 @@ std::string CodeGener::AllocReg(const std::string &varName)
         std::shared_ptr<Register> reg = registers[i];
         if (reg->storedVars.size() == 0)
         {
-            reg->InsertVar(varName);
+            //reg->InsertVar(varName);
             return reg->regName;
         }
     }
@@ -139,22 +140,16 @@ void CodeGener::SpillAllReg()
     }
 }
 
-void CodeGener::SpillAReg()
+std::string CodeGener::SpillAReg()
 {
     std::shared_ptr<Register> useLessReg;
-    int minUseCnt = INT32_MAX;
+    int LRU = 0;
     for (auto reg : registers)
     {
         int curUseCnt = 0;
-        for (auto var : reg->storedVars)
+        if (reg->LRU > LRU)
         {
-            Definition* varDef = symtable->SearchTableDefinition(var);
-            if (varDef)
-                curUseCnt += varDef->useCount;
-        }
-        if (curUseCnt < minUseCnt)
-        {
-            minUseCnt = curUseCnt;
+            LRU = reg->LRU;
             useLessReg = reg;
         }
     }
@@ -165,6 +160,7 @@ void CodeGener::SpillAReg()
             WriteStr(useLessReg->regName, varDef->storePlaces[0]);
     }
     useLessReg->Clear();
+    return useLessReg->regName;
 }
 
 bool IsLiteral(const std::string &str)
@@ -187,10 +183,20 @@ bool IsReg(const std::string &str)
     return false;
 }
 
+void CodeGener::UpdateRegLRU()
+{
+    for (auto reg : registers)
+    {
+        reg->LRU += 1;
+    }
+}
+
 //flag == 1表示获取等式左边变量的寄存器
 //等式左边的的值被修改，应该删除寄存器中保存的其他变量
 std::string CodeGener::GetRegister(const std::string &var, bool flag)
 {
+    UpdateRegLRU();
+    
     if (var == "return_value")
     {
         return "r0";
@@ -233,31 +239,30 @@ std::string CodeGener::GetRegister(const std::string &var, bool flag)
             else
                 WriteLdr(regName, std::string(varDef->storePlaces[0]));
         }
-        else
+        /*
+        if (dollarPos != -1)
         {
-            FindRegByName(regName)->InsertVar(var);
+            //FindRegByName(regName)->InsertVar(var);
         }
+        */
 
         //数组变量，完成寄存器分配前读取
         if (dollarPos != -1)
         {
-            if (var[-1] == '!')
+            FindRegByName(regName)->InsertVar(var);
+            if (var.back() == '!')
                 LoadArrayItemAddress(var, regName);
             else
                 LoadArrayItem(var, regName);
         }
-
-        return regName;
     }
     //分配失败
     else
     {
-        //spill后递归一次
-        SpillAReg();
-        return GetRegister(var, flag);
+        regName = SpillAReg();
     }
-
-    return var;
+    FindRegByName(regName)->LRU = 0;
+    return regName;
 }
 
 std::vector<std::string> CodeGener::SplitArrayItem(const std::string &item)
@@ -306,7 +311,10 @@ void CodeGener::LoadArrayItemAddress(const std::string &item, const std::string 
     }
     WriteAdd(regName, "sp", baseAddress);
     std::string reg1 = GetRegister("~tmp1", 0);
+    FindRegByName(reg1)->InsertVar("~tmp1");
+    /*
     std::string reg2 = GetRegister("~tmp2", 0);
+    FindRegByName(reg2)->InsertVar("~tmp2");
     std::string curDimension;
     for (int i = 0; i < dimensions.size() - 1; i++)
     {
@@ -322,26 +330,26 @@ void CodeGener::LoadArrayItemAddress(const std::string &item, const std::string 
         WriteMul(reg1, reg1, reg2);
         WriteAdd(regName, regName, reg1);
     }
+    */
     //WriteMov(reg1, "#" + itemSplit.back());
-    std::string reg_4 = GetRegister("~tmp4", 0);
-    WriteMov(reg_4, "#4");
     if (itemSplit[dimensions.size()][0] >= '0' && itemSplit[dimensions.size()][0] <= '9')
     {
-        WriteMul(reg1, GetRegister("#" + itemSplit[dimensions.size()], 0), reg_4);
+        std::string reg_5 = GetRegister("~tmp5", 0);
+        FindRegByName(reg_5)->InsertVar("~tmp5");
+        WriteMov(reg_5, "#" + itemSplit[dimensions.size()]);
+        WriteAdd(regName, reg_5, "LSL #2");
+        //WriteAdd(regName, "#" + itemSplit[dimensions.size()], "LSL #2");
+        //FindRegByName(reg_5)->Clear();
     }
     else
     {
-        WriteMul(reg1, GetRegister(itemSplit[dimensions.size()], 0), reg_4);
+        WriteAdd(regName, GetRegister(itemSplit[dimensions.size()], 0), "LSL #2");
     }
-    WriteAdd(regName, regName, reg1);
+    //WriteAdd(regName, regName, reg1);
+    FindRegByName(reg1)->Clear();
+    //FindRegByName(reg2)->Clear();
+    //FindRegByName(reg_4)->Clear();
 }
-//将寄存器中的值存到其他地方
-/*
-void CodeGener::EmptyRegister(const std::string &reg)
-{
-    for
-}
-*/
 
 void CodeGener::GenGlobalVar()
 {
@@ -620,6 +628,19 @@ void CodeGener::AllocLocalVariable(FunctionAST *func)
     }
 }
 
+int CodeGener::AvailableRegNum()
+{
+    int num = 0;
+    for (auto reg : registers)
+    {
+        if (!reg->storedVars.size())
+        {
+            num += 1;
+        }
+    }
+    return num;
+}
+
 void CodeGener::GenFunction()
 {
     std::shared_ptr<ThreeAddress> code;
@@ -633,6 +654,20 @@ void CodeGener::GenFunction()
 
     for(; codePos < codes->codes.size(); codePos++)
     {
+        /*
+        int availableRegs = AvailableRegNum();
+        fileWriter << "@ available regs: " << availableRegs << std::endl;
+        for (auto reg : registers)
+        {
+            fileWriter << "@ " << reg->regName << " " << reg->storedVars.size() << ": ";
+            for (auto var : reg->storedVars)
+            {
+                fileWriter << var <<", ";
+            }
+            fileWriter << std::endl;
+        }
+        */
+
         code = codes->codes[codePos];
         std::string regName[3];
         switch(code->op)
@@ -647,6 +682,13 @@ void CodeGener::GenFunction()
                     regName[i] = GetRegister(code->addresses[i]->address, flag);
                 } 
                 WriteAdd(regName[0], regName[1], regName[2]);
+                for (int i = 1; i < 3; i++)
+                {
+                    if (code->addresses[i]->address[0] == '@')
+                    {
+                        FindRegByName(regName[i])->Clear();
+                    }
+                }
             }
             break;
             case THREE_OP_MINUS:
@@ -659,6 +701,13 @@ void CodeGener::GenFunction()
                     regName[i] = GetRegister(code->addresses[i]->address, flag);
                 } 
                 WriteSub(regName[0], regName[1], regName[2]);
+                for (int i = 1; i < 3; i++)
+                {
+                    if (code->addresses[i]->address[0] == '@')
+                    {
+                        FindRegByName(regName[i])->Clear();
+                    }
+                }
             }
             break;
             case THREE_OP_MUL:
@@ -671,6 +720,13 @@ void CodeGener::GenFunction()
                     regName[i] = GetRegister(code->addresses[i]->address, flag);
                 } 
                 WriteMul(regName[0], regName[1], regName[2]);
+                for (int i = 1; i < 3; i++)
+                {
+                    if (code->addresses[i]->address[0] == '@')
+                    {
+                        FindRegByName(regName[i])->Clear();
+                    }
+                }
             }
             break;
             case THREE_OP_DIV:
@@ -698,15 +754,21 @@ void CodeGener::GenFunction()
             break;
             case THREE_OP_ASSIGN:
             {
+                fileWriter << "@ " << ThreeAddressOp2Str[code->op] << " ";
+                for(int i = 0; i < 2; i++)
+                    fileWriter << code->addresses[i]->address << ", ";
+                fileWriter << std::endl;
                 for(int i = 0; i < 2; i++)
                 {
                     bool flag = 0;
                     if (i == 0)
                         flag = 1;
                     regName[i] = GetRegister(code->addresses[i]->address, flag);
+                    fileWriter << "@ alloc reg " << regName[i] << " to " << code->addresses[i]->address << std::endl;
                 } 
                 if (code->addresses[0]->address.back() == '!')
                 {
+                    FindRegByName(regName[0])->Clear();
                     WriteStr(regName[1], regName[0]);
                 }
                 else
@@ -736,13 +798,13 @@ void CodeGener::GenFunction()
                         flag = 1;
                     regName[i] = GetRegister(code->addresses[i]->address, flag);
                 }
-                FindRegByName(regName[0])->Clear();
+                //FindRegByName(regName[0])->Clear();
                 WriteMov(regName[0], regName[1]);
                 std::string varName = code->addresses[0]->address;
                 Definition *varDef = symtable->SearchTableDefinition(varName);
                 
                 WriteStr(regName[0], varDef->storePlaces[0]);
-                FindRegByName(regName[0])->InsertVar(varName);
+                //FindRegByName(regName[0])->InsertVar(varName);
             }
             break;
             case THREE_OP_LABEL:

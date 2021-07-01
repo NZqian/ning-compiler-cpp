@@ -15,8 +15,12 @@ public:
     std::vector<std::string> storedVars;
     std::vector<std::string> storedVarsBackup;
     std::string regName;
+    int LRU;
     Register(const std::string &regName)
-    :regName(regName){}
+    :regName(regName)
+    {
+        LRU = 0;
+    }
     bool HaveVar(const std::string &varName);
     bool InsertVar(const std::string &varName);
     bool RemoveVar(const std::string &varName);
@@ -46,11 +50,13 @@ class CodeGener
     std::shared_ptr<Register> FindRegByName(const std::string &regName);
     std::shared_ptr<Register> FindRegByVar(const std::string &varName);
     void SpillReg(const std::string &regName);
-    void SpillAReg();
+    std::string SpillAReg();
     void SpillAllReg();
     std::string AllocReg(const std::string &varName);
     void EmptyReg(const std::string &reg);
     void ClearRegs(int startPos);
+    void UpdateRegLRU();
+    int AvailableRegNum();
 
     void PushCallParam();
     void ProcessVarAddress();
