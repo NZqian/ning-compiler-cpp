@@ -1,6 +1,6 @@
 IF(APPLE)
-    set(CMAKE_CXX_COMPILER /usr/local/Cellar/gcc/10.2.0/bin/c++-10)
-    set(CMAKE_C_COMPILER /usr/local/Cellar/gcc/10.2.0/bin/cpp-10)
+    set(CMAKE_CXX_COMPILER /usr/local/Cellar/gcc/11.1.0_1/bin/g++-11)
+    set(CMAKE_C_COMPILER /usr/local/Cellar/gcc/11.1.0_1/bin/gcc-11)
 ELSE()
     set(CMAKE_CXX_COMPILER /usr/bin/clang++)
     set(CMAKE_C_COMPILER /usr/bin/clang)

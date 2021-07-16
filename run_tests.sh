@@ -10,7 +10,7 @@ do
     if [ "${source_file##*.}" == "sy" ]; then
         echo "**********running test ${source_file}***********"
         path="$folder/$source_file"
-        ./ning $path
+        ./ning $path -O
     #else
 	#echo "${source_file%%*.}"
     fi
