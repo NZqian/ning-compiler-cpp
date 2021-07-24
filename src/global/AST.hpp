@@ -14,6 +14,7 @@ class Visitor
     std::shared_ptr<ThreeAddress> curCode;
     std::shared_ptr<NameChanger> nameChanger;
     std::string tmpLabel;
+    ThreeAddressType tmpType;
     bool inLoop;
     std::vector<std::string> label[2];
 

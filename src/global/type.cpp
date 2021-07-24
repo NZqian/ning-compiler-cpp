@@ -98,3 +98,21 @@ std::map<std::string, ThreeAddressOp> strOp2ThreeAddressOp
     {"==", THREE_OP_EQ},
     {"!=", THREE_OP_NE},
 };
+
+std::map<Tok_type, std::string> tok2string{
+    {TOK_EOF, "EOF"},
+    {TOK_IDENTIFIER, "identifier"},
+    {TOK_OPERATOR, "operator"},
+    {TOK_SYMBOL, "symbol"},
+    {TOK_NUMBER, "number"},
+    {TOK_CONST, "const"},
+    {TOK_INT, "int"},
+    {TOK_VOID, "void"},
+    {TOK_IF, "if"},
+    {TOK_ELSE, "else"},
+    {TOK_WHILE, "while"},
+    {TOK_CONTINUE, "continue"},
+    {TOK_BREAK, "break"},
+    {TOK_RETURN, "return"},
+    {TOK_UNKNOWN, "unknown"},
+};

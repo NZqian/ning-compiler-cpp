@@ -82,7 +82,6 @@ std::shared_ptr<BlockAST> Parser::ParseBlock()
     GetNextToken(); //eat }
     std::shared_ptr<BlockAST> block = std::make_shared<BlockAST>(children);
     return block;
-    //return std::make_shared<BlockAST>(children);
 }
 
 std::vector<std::shared_ptr<BaseAST>> Parser::ParseDefinition()

@@ -16,11 +16,8 @@ public:
 class Lexer
 {
     std::shared_ptr<FileReader> fileReader;
-    std::map<Tok_type, std::string> tok2string;
     std::set<std::string> reservedWord;
     std::set<std::string> typeWord;
-    void mapInit();
-    void setInit();
     void GetNextChar(); //右移curChar与nextChar
     bool isAlpha(char c);
     bool isNum(char c);

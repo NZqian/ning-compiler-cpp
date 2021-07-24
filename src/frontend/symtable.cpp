@@ -14,12 +14,6 @@ Definition::Definition()
     this->pointer = nullptr;
 }
 
-/*
-SymTable::SymTable()
-{
-}
-*/
-
 bool SymTable::Insert(BaseAST *definition, const std::string &name, DefinitionType type)
 {
     if(SearchTable(name))

@@ -127,6 +127,7 @@ extern std::map<ThreeAddressOp, ThreeAddressOp> ExprOp2JumpOp;
 extern std::map<ThreeAddressOp, ThreeAddressOp> ExprOp2JumpOpReversed;
 extern std::map<ThreeAddressType, std::string> ThreeAddressType2Str;
 extern std::map<std::string, ThreeAddressOp> strOp2ThreeAddressOp;
+extern std::map<Tok_type, std::string> tok2string;
 
 /*
 enum Expr_type

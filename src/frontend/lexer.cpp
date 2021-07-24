@@ -1,48 +1,5 @@
 #include "lexer.hpp"
 
-void Lexer::mapInit()
-{
-    tok2string[TOK_EOF]         = "EOF";
-    tok2string[TOK_IDENTIFIER]  = "identifier";
-    tok2string[TOK_OPERATOR]    = "operator";
-    tok2string[TOK_SYMBOL]      = "symbol";
-    tok2string[TOK_NUMBER]      = "number";
-    tok2string[TOK_CONST]       = "const";
-    tok2string[TOK_INT]         = "int";
-    tok2string[TOK_VOID]        = "void";
-    tok2string[TOK_IF]          = "if";
-    tok2string[TOK_ELSE]        = "else";
-    tok2string[TOK_WHILE]       = "while";
-    tok2string[TOK_CONTINUE]    = "continue";
-    tok2string[TOK_BREAK]       = "break";
-    tok2string[TOK_RETURN]      = "return";
-    tok2string[TOK_UNKNOWN]     = "unknown";
-}
-
-void Lexer::setInit()
-{
-    /*
-    typeWord.insert("int");
-    typeWord.insert("bool");
-    typeWord.insert("string");
-    typeWord.insert("char");
-    typeWord.insert("void");
-
-    reservedWord.insert("struct");
-    reservedWord.insert("typedef");
-    reservedWord.insert("if");
-    reservedWord.insert("else");
-    reservedWord.insert("while");
-    reservedWord.insert("for");
-    reservedWord.insert("continue");
-    reservedWord.insert("break");
-    reservedWord.insert("return");
-    reservedWord.insert("assert");
-    reservedWord.insert("true");
-    reservedWord.insert("false");
-    reservedWord.insert("NULL");
-    */
-}
 Lexer::Lexer(std::string filename)
 {
     identifier = "";
@@ -50,8 +7,6 @@ Lexer::Lexer(std::string filename)
     fileReader = std::make_shared<FileReader>(filename);
     curChar = fileReader->GetChar();
     nextChar = fileReader->GetChar();
-    mapInit();
-    setInit();
 }
 
 void Lexer::GetNextChar()
